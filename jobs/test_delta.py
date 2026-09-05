@@ -1,5 +1,6 @@
 from pyspark.sql import SparkSession
 from delta import configure_spark_with_delta_pip
+from delta.tables import DeltaTable
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
             "org.apache.spark.sql.delta.catalog.DeltaCatalog"
         )
 
+        # MinIO / S3A
         .config(
             "spark.hadoop.fs.s3a.endpoint",
             "http://minio:9000"
@@ -49,6 +51,8 @@ def main():
         )
     )
 
+    # IMPORTANT:
+    # Use the configured builder.
     spark = configure_spark_with_delta_pip(builder).getOrCreate()
 
     print("\n")
@@ -97,8 +101,6 @@ def main():
     result.show()
 
     print("\nDelta table history:")
-
-    from delta.tables import DeltaTable
 
     delta_table = DeltaTable.forPath(
         spark,
