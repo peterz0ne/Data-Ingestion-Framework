@@ -1,3 +1,7 @@
+# Data Description
+
+https://home4.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
+
 ## Primary entity
 A Taxi ride
 
