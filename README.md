@@ -5,6 +5,7 @@
 - Weather: (Maybe these)
   - https://dev.meteostat.net/parameters
   - https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/isd-lite-format.pdf
+  - Probably UTC timezone
 - Air Quality: https://aqs.epa.gov/aqsweb/airdata/FileFormats.html#_format_5
 - Taxi Zone Lookup: (Not yet found)
 
