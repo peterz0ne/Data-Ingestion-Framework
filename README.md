@@ -2,7 +2,9 @@
 
 ## Documentation for used Data files (csv, parquet)
 - Taxi Trips: https://home4.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
-- Weather: (Maybe this) https://dev.meteostat.net/parameters
+- Weather: (Maybe these)
+  - https://dev.meteostat.net/parameters
+  - https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/isd-lite-format.pdf
 - Air Quality: https://aqs.epa.gov/aqsweb/airdata/FileFormats.html#_format_5
 - Taxi Zone Lookup: (Not yet found)
 
