@@ -25,17 +25,17 @@ A taxi zone
 - LocationID
 
 ## Attributes for join
-- LocationID
+- `LocationID` is joined from Taxi Trips as `PULocationID` and `DOLocationID`.
 
 ## Temporal attributes
-no
+None of the attributes are temporal
 
 ## Categorical attributes
 - Borough
     - see references above
 - service_zone
     - see references above
-- even though the 'zone' attribute has a finite set of values that are pre-defined, since every location is mapped to a specific zone with an (almost) 1-1 relationship, we will treat is a non-categorical value
+- even though the `Zone` attribute has a finite set of values that are pre-defined, since every location is mapped to a specific zone with an (almost) 1-1 relationship, we will treat is a non-categorical value
 
 ## Growing attributes over time
 - Zone?
