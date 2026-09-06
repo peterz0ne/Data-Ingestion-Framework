@@ -9,7 +9,8 @@
   - https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/isd-lite-format.pdf
   - Probably UTC timezone
 - Air Quality: https://aqs.epa.gov/aqsweb/airdata/FileFormats.html#_format_5
-- Taxi Zone Lookup: (Not yet found)
+- Taxi Zone Lookup:
+  - Look [here](./data/taxi_zone_lookup/Readme.md)
 
 ## Published Analysis Example (might be useful)
 - https://medium.com/@mozart38/where-do-people-go-in-nyc-the-recipe-of-an-analysis-a307499013a6
