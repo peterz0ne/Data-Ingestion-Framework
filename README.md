@@ -3,7 +3,7 @@
 ## Documentation for used Data files (csv, parquet)
 - Taxi Trips:
   - https://home4.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
-  - Probably local NY time
+  - Probably local NYC time (Eastern Time, America/New_York)
 - Weather: (Maybe these)
   - https://dev.meteostat.net/parameters
   - https://www.ncei.noaa.gov/pub/data/noaa/isd-lite/isd-lite-format.pdf
