@@ -38,5 +38,4 @@ None of the attributes are temporal
 - even though the `Zone` attribute has a finite set of values that are pre-defined, since every location is mapped to a specific zone with an (almost) 1-1 relationship, we will treat is a non-categorical value
 
 ## Growing attributes over time
-- Zone?
-    - probably not, because the zones are pre-defined
+- None

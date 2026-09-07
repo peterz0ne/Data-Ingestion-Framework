@@ -6,15 +6,9 @@ https://home4.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yell
 A Taxi ride
 
 ## Primary key
-- vendor id
-- timestamps (PU,DO)
-- distance
-- locations (PU,DO)
-(or create a new one)
+- A new column for a Primary Key needs to be generated
 
-TODO: create a question on canvas
-
-`- If we believe that a primary key cannot be guaranteed unique for a dataset, can we generate our own primary key?`
+[TODO: create an explanation for the report "If you decide to generate a key, explain why the original attributes are not enough and how your generated key is created."]
 
 
 ## Attributes for join
