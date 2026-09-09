@@ -4,6 +4,7 @@ import sys
 from pyspark.sql import SparkSession
 from operations import apply_operations
 from schema_validations import validate_schema
+from quality import run_quality_checks
 
 def get_config_path():
     if len(sys.argv) != 2:
@@ -49,6 +50,8 @@ def main():
 
         validate_schema(df, config.get("schema"))
         df = apply_operations(df, config.get("operations", []))
+
+        df = run_quality_checks(df, config.get("quality_checks", {}))
 
         df.printSchema()
         df.show(5, truncate=False)

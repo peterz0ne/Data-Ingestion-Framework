@@ -49,6 +49,20 @@
                 "target_column": "observation_datetime",
                 "format": "yyyy-MM-dd HH:mm"
             }
+        },
+        {
+            "action": "cast_columns",
+            "parameters": {
+                "columns": {
+                    "latitude": "double",
+                    "longitude": "double",
+                    "sample_measurement": "double",
+                    "mdl": "double",
+                    "date_local": "date",
+                    "date_gmt": "date",
+                    "date_of_last_change": "date"
+                }
+            }
         }
     ]
 }

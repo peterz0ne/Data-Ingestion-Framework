@@ -32,5 +32,10 @@
                 ]
             }
         }
-    ]
+    ],
+    "quality_checks": {
+        "primary_key": [
+            "location_id"
+        ]
+    }
 }

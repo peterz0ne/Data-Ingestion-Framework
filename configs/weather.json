@@ -47,5 +47,13 @@
                 "target_column": "observation_datetime"
             }
         }
-    ]
+    ],
+    "quality_checks": {
+        "primary_key": [
+            "year",
+            "month",
+            "day",
+            "hour"
+        ]
+    }
 }
