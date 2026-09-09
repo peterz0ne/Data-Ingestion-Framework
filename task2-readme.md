@@ -5,21 +5,44 @@
 ### Directory structure
 `raw_data`, `cleaned_data`, and `final_data` are all Delta Lake layers
 
+#### Locally:
+
 ```text
-data_lake/
-├── raw_data/
-│   ├── taxi_trips/
-│   ├── weather/
-│   ├── air_quality/
-│   └── taxi_zone_lookup/
-├── cleaned_data/
+project/
+├── configs/
+│   ├── taxi_trips.json
+│   ├── weather.json
+│   ├── air_quality.json
+│   └── taxi_zone_lookup.json
+├── landing/
 │   ├── taxi_trips/
 │   ├── weather_hourly/
 │   ├── air_quality_hourly/
 │   └── taxi_zones/
-└── final_data/
+└── jobs/
+    └── *.py
+```
+* <b><u>configs/</u></b> stores the configuration files for each data (metadata + dataset-specific transformation rules)
+* <b><u>landing/</u></b> stores the the actual data source files (the landing layer)
+* <b><u>jobs/</u></b> the Python scripts responsible for connecting to Spark, passing to Spark the transformation rules to execute (also defining these rules), and invoking write/read operations
+
+#### On the Delta Lake Storage:
+```text
+data_lake/
+├── bronze/
+│   ├── taxi_trips/
+│   ├── weather/
+│   ├── air_quality/
+│   └── taxi_zone_lookup/
+├── silver/
+│   ├── taxi_trips/
+│   ├── weather_hourly/
+│   ├── air_quality_hourly/
+│   └── taxi_zones/
+└── gold/
     └── enriched_taxi_trips/
 ```
+* Explanation [here](https://medium.com/@divyanshgoyal8989/understanding-the-medallion-architecture-in-a-data-lakehouse-40d03bb28761)
 
 Each dataset directory represents one Delta table containing its own _delta_log and Parquet data files. Monthly source files for taxi trips are ingested into the same dataset table.
 
@@ -30,15 +53,17 @@ they are integrated.
 
 | Layer | Delta Table | Row Granularity | Purpose |
 |---|---|---|---|
-| Raw | `raw_taxi_trips` | One raw taxi-trip record | Stores taxi records as ingested, with source and ingestion metadata. |
-| Raw | `raw_weather` | One raw hourly weather record | Stores weather records as ingested from the source CSV, with source and ingestion metadata. |
-| Raw | `raw_air_quality` | One raw air-quality measurement | Stores air-quality records as ingested from the source CSV, with source and ingestion metadata. |
-| Raw | `raw_taxi_zone_lookup` | One taxi-zone lookup record | Stores the zone lookup data as ingested, with source and ingestion metadata. |
-| Cleaned | `cleaned_taxi_trips` | One validated taxi trip | Stores standardized taxi records with formatted time fields required for later joins. |
-| Cleaned | `cleaned_weather_hourly` | One weather observation per hour | Stores validated weather data with a single hourly UTC timestamp. |
-| Cleaned | `cleaned_air_quality_hourly` | One aggregated air-quality value per selected monitoring site and hour | Stores standardized air-quality data ready for time-based integration. |
-| Cleaned | `cleaned_taxi_zones` | One validated taxi zone | Stores zone records with unique `LocationID` values. |
-| Final | `final_enriched_taxi_trips` | One enriched taxi trip | Stores the final taxi trips enriched with pickup weather, air quality, and pickup/dropoff zone and borough information. |
+| Bronze | `bronze_taxi_trips` | One raw taxi-trip record | Stores taxi records as ingested, with source and ingestion metadata. |
+| Bronze | `bronze_weather` | One raw hourly weather record | Stores weather records as ingested from the source CSV, with source and ingestion metadata. |
+| Bronze | `bronze_air_quality` | One raw air-quality measurement | Stores air-quality records as ingested from the source CSV, with source and ingestion metadata. |
+| Bronze | `bronze_taxi_zone_lookup` | One taxi-zone lookup record | Stores the zone lookup data as ingested, with source and ingestion metadata. |
+| Silver | `silver_taxi_trips` | One validated taxi trip | Stores standardized taxi records with formatted time fields required for later joins. |
+| Silver | `silver_weather_hourly` | One weather observation per hour | Stores validated weather data with a single hourly UTC timestamp. |
+| Silver | `silver_air_quality_hourly` | One aggregated air-quality value per selected monitoring site and hour | Stores standardized air-quality data ready for time-based integration. |
+| Silver | `silver_air_quality_hourly` | One aggregated air-quality value per selected monitoring site and hour | Stores standardized air-quality data ready for time-based integration. |
+| Gold | `gold_enriched_taxi_trips` | One enriched taxi trip | Stores the final taxi trips enriched with pickup weather, air quality, and pickup/dropoff zone and borough information. |
+
+* The Bronze Layer is the source of truth of our raw data. The silver layer is the source of truth for our clean/validated data. The Gold layer is for delta tables that are created for specific use-cases of the data (eg one user needs the taxi trips with some extra columns from the other dimension tables, while a different user wants the fact table completely normalized). Bronze layer is needed because if something changes in the transformation logic of our data, we just update the rule and run the scripts again against our bronze layer, producing a new silver layer (wouldn't be possible if we were using an ETL style approach). On the other hand, if something changes in how we want the final data, we can just create a new delta table in the gold layer (eg for a specific aggregation).
 
 ### Naming conventions
 - Use `lowercase snake_case` for directories, tables, and columns in the cleaned and final layers but preserve original source column names in the raw layer.
@@ -48,7 +73,7 @@ they are integrated.
     - `_id` for identifiers
     - `_datetime` for timestamps
     - `_date` for dates
-- preserve original column names in `raw` layer and apply standardization rules in the `cleaned` layer
+- preserve original column names in `bronze` layer and apply standardization rules in the `silver` layer
 
 ### Partitioning strategy
 
@@ -61,11 +86,12 @@ Amount of data in each partition: You can partition by a column if you expect da
 
 - **Weather (raw and cleaned):** Stored without partitioning. The dataset contains hourly observations and is small enough that splitting it by year, month, or day would create unnecessarily small partitions.
 
-- **Taxi-zone lookup (raw and cleaned):** Stored without partitioning. This small lookup table is used to map zone identifiers to zone and borough information. Partitioning would add overhead with little benefit.
+- **Taxi-zone lookup (raw and cleaned):** Stored without partitioning. This small lookup table is used to map zone identifiers to zone and borough information. Partitioning would add overhead with little benefit. Also, since this is a lookup table, it is very unlikely to grow.
 
 - **Raw air quality:** Initially stored without partitioning. Although the source CSV exceeds 2 GB, its CSV size alone does not justify partitioning: the stored Delta size and the amount of data per candidate partition must also be considered. Partitioning by observation year and month can be reconsidered if the dataset grows and queries frequently filter by time.
 
 - **Cleaned hourly air quality:** Stored without partitioning. Selecting the required pollutant and monitoring sites, then aggregating readings by hour, is expected to produce a much smaller table. Its stored size will be checked after ingestion to confirm this choice.
+    * Note: <b>I think we should still partition this (in the silver layer) and just mention that it isnt best practice</b>
 
 - **Final enriched taxi trips:** Initially stored without partitioning, following the taxi-trips baseline. Because enrichment adds columns, its stored size will be checked separately before deciding whether monthly partitioning is justified.
 
@@ -75,10 +101,10 @@ Amount of data in each partition: You can partition by a column if you expect da
 
 ### Which datasets should conceptually be treated as lookup tables?
 - The taxi_zone_lookup dataset is a lookup table mapping zone identifiers to zone and borough information.
-- Cleaned weather and hourly air quality serve as contextual lookup datasets for enriching trips by time and, where applicable, monitoring site. Their lookup keys must be unique to avoid duplicating taxi trips during joins.
+- <b>I dont know if the following can be considered 'lookup' tables, since they are just tables that are related to the fact table and have growing data of their own (while taxi_zone_lookup is just an index of some codes, not growing data):</b>Cleaned weather and hourly air quality serve as contextual lookup datasets for enriching trips by time and, where applicable, monitoring site. Their lookup keys must be unique to avoid duplicating taxi trips during joins.
 
 ### Which datasets should not be partitioned? Explain why.
-- Taxi zones and weather: Small datasets where partitioning would add overhead with little benefit.
+- Taxi zones and weather: Small datasets where partitioning would add overhead with little benefit (also, we are not expecting them to grow out of proportion).
 - Cleaned hourly air quality: Expected to be small after filtering and aggregation, so initially unpartitioned.
 - Taxi trips, raw air quality, and enriched trips are initially unpartitioned. Reconsider after measuring Delta table sizes and query performance.
 
