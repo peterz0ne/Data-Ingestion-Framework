@@ -1,0 +1,36 @@
+{
+    "dataset": "taxi_zones",
+    "schema": {
+        "LocationID": "int",
+        "Borough": "string",
+        "Zone": "string",
+        "service_zone": "string"
+    },
+    "source": {
+        "format": "csv",
+        "paths": [
+            "/opt/spark/data/taxi_zone_lookup/taxi_zone_lookup.csv"
+        ],
+        "options": {
+            "header": true,
+            "inferSchema": true
+        }
+    },
+    "operations": [
+        {
+            "action": "rename_columns",
+            "parameters": {
+                "source": [
+                    "LocationID",
+                    "Borough",
+                    "Zone"
+                ],
+                "target": [
+                    "location_id",
+                    "borough",
+                    "zone"
+                ]
+            }
+        }
+    ]
+}

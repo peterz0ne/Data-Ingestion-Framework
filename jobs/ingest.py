@@ -1,0 +1,60 @@
+import json
+import sys
+
+from pyspark.sql import SparkSession
+from operations import apply_operations
+from schema_validations import validate_schema
+
+def get_config_path():
+    if len(sys.argv) != 2:
+        print("Usage: ingest.py <configuration-path>")
+        sys.exit(1)
+
+    return sys.argv[1]
+
+
+def load_config(config_path):
+    with open(config_path) as file:
+        return json.load(file)
+
+def create_spark(dataset):
+    spark = SparkSession.builder.appName(f"Read-{dataset}").getOrCreate()
+    spark.conf.set("spark.sql.session.timeZone", "UTC")
+    spark.sparkContext.setLogLevel("WARN")
+    return spark
+
+def read_source(spark, source):
+    return (
+        spark.read
+        .format(source["format"])
+        .options(**source["options"])
+        .load(source["paths"])
+    )
+
+def main():
+    config_path = get_config_path()
+    config = load_config(config_path)
+
+    dataset = config["dataset"]
+    source = config["source"]
+
+    spark = create_spark(dataset)
+
+    try:
+        print(f"Loading dataset: {dataset}")
+        df = read_source(spark, source)
+        print("Source files:")
+        for path in sorted(df.inputFiles()):
+            print(f"  {path}")
+
+        validate_schema(df, config.get("schema"))
+        df = apply_operations(df, config.get("operations", []))
+
+        df.printSchema()
+        df.show(5, truncate=False)
+    finally:
+        spark.stop()
+
+
+if __name__ == "__main__":
+    main()

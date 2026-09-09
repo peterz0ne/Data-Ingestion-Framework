@@ -1,0 +1,51 @@
+{
+    "dataset": "weather",
+    "schema": {
+        "year": "int",
+        "month": "int",
+        "day": "int",
+        "hour": "int",
+        "temp": "double",
+        "temp_source": "string",
+        "rhum": "int",
+        "rhum_source": "string",
+        "prcp": "double",
+        "prcp_source": "string",
+        "snwd": "string",
+        "snwd_source": "string",
+        "wdir": "int",
+        "wdir_source": "string",
+        "wspd": "double",
+        "wspd_source": "string",
+        "wpgt": "string",
+        "wpgt_source": "string",
+        "pres": "double",
+        "pres_source": "string",
+        "cldc": "int",
+        "cldc_source": "string",
+        "coco": "int",
+        "coco_source": "string"
+    },
+    "source": {
+        "format": "csv",
+        "paths": [
+            "/opt/spark/data/weather/weather.csv"
+        ],
+        "options": {
+            "header": true,
+            "inferSchema": true
+        }
+    },
+    "operations": [
+        {
+            "action": "create_hourly_datetime",
+            "parameters": {
+                "year_column": "year",
+                "month_column": "month",
+                "day_column": "day",
+                "hour_column": "hour",
+                "target_column": "observation_datetime"
+            }
+        }
+    ]
+}

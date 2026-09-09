@@ -1,0 +1,54 @@
+{
+    "dataset": "air_quality",
+    "schema": {
+        "State Code": "string",
+        "County Code": "string",
+        "Site Num": "string",
+        "Parameter Code": "string",
+        "POC": "string",
+        "Latitude": "string",
+        "Longitude": "string",
+        "Datum": "string",
+        "Parameter Name": "string",
+        "Date Local": "string",
+        "Time Local": "string",
+        "Date GMT": "string",
+        "Time GMT": "string",
+        "Sample Measurement": "string",
+        "Units of Measure": "string",
+        "MDL": "string",
+        "Uncertainty": "string",
+        "Qualifier": "string",
+        "Method Type": "string",
+        "Method Code": "string",
+        "Method Name": "string",
+        "State Name": "string",
+        "County Name": "string",
+        "Date of Last Change": "string"
+    },
+    "source": {
+        "format": "csv",
+        "paths": [
+            "/opt/spark/data/air_quality/hourly_88101_2024.csv"
+        ],
+        "options": {
+            "header": true,
+            "inferSchema": false
+        }
+    },
+    "operations": [
+        {
+            "action": "standardize_column_names",
+            "parameters": {}
+        },
+        {
+            "action": "create_timestamp_from_columns",
+            "parameters": {
+                "date_column": "date_gmt",
+                "time_column": "time_gmt",
+                "target_column": "observation_datetime",
+                "format": "yyyy-MM-dd HH:mm"
+            }
+        }
+    ]
+}
