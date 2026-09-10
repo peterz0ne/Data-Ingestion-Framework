@@ -68,6 +68,25 @@ def cast_columns(df, parameters):
 
     return df
 
+
+def generate_primary_key(df, parameters):
+    column_name = parameters["column"]
+    strategy = parameters.get("strategy", "incremental").lower()
+    start_value = parameters.get("start", 1)
+
+    if strategy == "uuid":
+        return df.withColumn(column_name, F.uuid())
+    elif strategy == "incremental":
+        return df.withColumn(
+            column_name,
+            F.monotonically_increasing_id() + F.lit(start_value)
+        )
+    else:
+        print("Unknown primary key generation strategy.")
+        sys.exit(1)
+
+
+
 def apply_operations(df, operations):
     for operation in operations:
         action = operation["action"]
@@ -85,6 +104,12 @@ def apply_operations(df, operations):
             df = create_timestamp_from_columns(df, parameters)
         elif action == "cast_columns":
             df = cast_columns(df, parameters)
+        elif action == "generate_primary_key":
+            df = generate_primary_key(df, parameters)
+        elif action == "validate_allowed_values":
+            df = validate_allowed_values(df, parameters)
+        elif action == "validate_positive_numbers":
+            df = validate_positive_numbers(df, parameters)
         else:
             print(f"Unknown operation: {action}")
             sys.exit(1)

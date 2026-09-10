@@ -48,12 +48,51 @@
             }
         }
     ],
-    "quality_checks": {
-        "primary_key": [
-            "year",
-            "month",
-            "day",
-            "hour"
-        ]
-    }
+    "quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour"
+                ],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "payment_type",
+                "allowed_values": [1, 2, 3, 4, 5, 6],
+                "on_failure": {
+                    "action": "fill",
+                    "method": "mode"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "payment_type",
+                "allowed_values": [1, 2, 3, 4, 5, 6],
+                "on_failure": {
+                    "action": "fill",
+                    "method": "mode"
+                }
+            }
+        },
+        {
+            "action": "validate_positive_numbers",
+            "parameters": {
+                "column": "trip_distance",
+                "on_failure": {
+                    "action": "remove_rows"
+                }
+            }
+        }
+    ]
 }

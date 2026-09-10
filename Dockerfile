@@ -20,9 +20,11 @@ RUN curl -fL \
 
 COPY conf/spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 COPY jobs /opt/spark/jobs
+COPY configs /opt/spark/configs
+COPY data /opt/spark/data
 
 RUN mkdir -p /opt/spark/work-dir \
-    && chown -R spark:spark /opt/spark/jobs /opt/spark/work-dir \
+    && chown -R spark:spark /opt/spark/jobs /opt/spark/configs /opt/spark/data /opt/spark/work-dir \
     && chown spark:spark /opt/spark/jars/*.jar
 
 USER spark

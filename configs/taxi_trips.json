@@ -55,6 +55,14 @@
             }
         },
         {
+            "action": "generate_primary_key",
+            "parameters": {
+                "column": "trip_id",
+                "strategy": "incremental",
+                "start": 1
+            }
+        },
+        {
             "action": "convert_to_utc",
             "parameters": {
                 "columns": [

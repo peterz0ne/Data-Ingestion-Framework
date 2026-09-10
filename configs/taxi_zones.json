@@ -33,9 +33,17 @@
             }
         }
     ],
-    "quality_checks": {
-        "primary_key": [
-            "location_id"
-        ]
-    }
+    "quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "location_id"
+                ],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        }
+    ]
 }

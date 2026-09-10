@@ -42,6 +42,14 @@
             "parameters": {}
         },
         {
+            "action": "generate_primary_key",
+            "parameters": {
+                "column": "observation_id",
+                "strategy": "incremental",
+                "start": 1
+            }
+        },
+        {
             "action": "create_timestamp_from_columns",
             "parameters": {
                 "date_column": "date_gmt",

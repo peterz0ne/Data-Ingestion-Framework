@@ -14,3 +14,13 @@
 
 ## Published Analysis Example (might be useful)
 - https://medium.com/@mozart38/where-do-people-go-in-nyc-the-recipe-of-an-analysis-a307499013a6
+
+
+
+* On windows run:
+```
+ docker compose up -d minio minio-init
+docker compose run --rm spark-master \
+  bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_zones.json"
+
+```

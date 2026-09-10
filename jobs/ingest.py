@@ -32,6 +32,19 @@ def read_source(spark, source):
         .load(source["paths"])
     )
 
+
+def write_bronze(df, dataset):
+    target = f"s3a://delta-data/bronze/bronze_{dataset}"
+    df.write.format("delta").mode("overwrite").save(target)
+    print(f"Written bronze Delta table to: {target}")
+
+
+def write_silver(df, dataset):
+    target = f"s3a://delta-data/silver/silver_{dataset}"
+    df.write.format("delta").mode("overwrite").save(target)
+    print(f"Written silver Delta table to: {target}")
+
+
 def main():
     config_path = get_config_path()
     config = load_config(config_path)
@@ -48,8 +61,17 @@ def main():
         for path in sorted(df.inputFiles()):
             print(f"  {path}")
 
-        validate_schema(df, config.get("schema"))
+        # write to bronze layer before doing any transformations or validations
+        write_bronze(df, dataset)
+
+        # validate schema and apply operations to transform the data
         df = apply_operations(df, config.get("operations", []))
+        validate_schema(df, config.get("schema"))
+
+        # write to silver layer after transformations and validations
+        write_silver(df, dataset)
+
+        # later, do some enrichment and aggregation and write to the gold layer
 
         df = run_quality_checks(df, config.get("quality_checks", {}))
 
