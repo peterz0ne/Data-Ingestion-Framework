@@ -65,8 +65,8 @@ def main():
         write_bronze(df, dataset)
 
         # validate schema and apply operations to transform the data
-        df = apply_operations(df, config.get("operations", []))
         validate_schema(df, config.get("schema"))
+        df = apply_operations(df, config.get("operations", []))
 
         # write to silver layer after transformations and validations
         write_silver(df, dataset)
