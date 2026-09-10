@@ -1,42 +1,101 @@
 import sys
 
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 
-def check_primary_key(df, key_columns):
-    total_rows = df.count()
+def missing_key_condition(key_columns):
+    condition = F.lit(False)
+    for column in key_columns:
+        condition = condition | F.col(column).isNull()
+    return condition
 
-    rows_with_keys = df.dropna(subset=key_columns).count()
-    missing_key_rows = total_rows - rows_with_keys
-
-    duplicate_key_groups = (
-         df.dropna(subset=key_columns)
-         .groupBy(*key_columns)
-         .count()
-         .filter(F.col("count") > 1)
-         .count()
+def add_duplicate_key_count(df, key_columns):
+    return df.withColumn(
+        "_duplicate_key_count",
+        F.count("*").over(Window.partitionBy(*key_columns)),
     )
 
-    if missing_key_rows > 0 or duplicate_key_groups > 0:
-        print("Primary key check failed.")
-        print(f"Rows with missing key values: {missing_key_rows}")
-        print(f"Duplicate key groups: {duplicate_key_groups}")
-        sys.exit(1)
+def validate_primary_key(df, parameters):
+    key_columns = parameters["columns"]
 
-    print(f"Primary key check passed: {', '.join(key_columns)}")
+    df = handle_validation_failure(
+        df,
+        None,
+        missing_key_condition(key_columns),
+        parameters,
+        f"Primary key contains missing values: {', '.join(key_columns)}.",
+    )
 
+    df = add_duplicate_key_count(df, key_columns)
+
+    df = handle_validation_failure(
+        df,
+        None,
+        F.col("_duplicate_key_count") > 1,
+        parameters,
+        f"Primary key contains duplicate values: {', '.join(key_columns)}.",
+    )
+
+    return df.drop("_duplicate_key_count")
 
 def run_quality_checks(df, quality_checks):
-    # key_columns = quality_checks.get("primary_key")
+    for check in quality_checks:
+        action = check["action"]
+        parameters = check["parameters"]
 
-    for check in quality_checks.get("quality_checks", []):
-        pass
-    # handle_validation()
-
-    # if key_columns:
-    #     check_primary_key(df, key_columns)
+        if action == "validate_primary_key":
+            df = validate_primary_key(df, parameters)
+        elif action == "validate_allowed_values":
+            df = validate_allowed_values(df, parameters)
+        elif action == "validate_non_negative_numbers":
+            df = validate_non_negative_numbers(df, parameters)
+        else:
+            print(f"Unknown quality check: {action}")
+            sys.exit(1)
 
     return df
+
+def get_failure_action(parameters):
+    failure = parameters.get("on_failure", {"action": "fail"})
+
+    action = failure.get("action", "fail")
+
+    if action not in {"fail", "drop", "fill"}:
+        print(f"Unknown failure action: {action}")
+        sys.exit(1)
+
+    return action, failure
+
+def get_fill_value(df, column, invalid_condition, failure):
+    if "value" in failure:
+        return F.lit(failure["value"])
+
+    method = failure.get("method")
+    valid_df = df.filter(~invalid_condition)
+
+    if method == "mean":
+        value = valid_df.select(F.avg(column)).first()[0]
+    elif method == "median":
+        values = valid_df.approxQuantile(column, [0.5], 0.0)
+        value = values[0] if values else None
+    elif method == "mode":
+        row = (
+            valid_df.groupBy(column)
+            .count()
+            .orderBy(F.desc("count"), F.asc(column))
+            .first()
+        )
+        value = row[0] if row else None
+    else:
+        print("Fill requires either 'value' or method 'mean', 'median', or 'mode'.")
+        sys.exit(1)
+
+    if value is None:
+        print(f"Cannot calculate a {method} replacement for '{column}'.")
+        sys.exit(1)
+
+    return F.lit(value)
 
 def handle_validation_failure(
     df,
@@ -45,61 +104,36 @@ def handle_validation_failure(
     parameters,
     message,
 ):
-    failure = parameters.get("on_failure", {"action": "fail"})
-    if isinstance(failure, str):
-        failure = {"action": failure}
-
-    action = failure.get("action", "fail")
-
-    if action == "remove_rows":
-        print(f"{message} Removing {invalid_count} invalid rows.")
-        return df.filter(~invalid_condition)
-
-    if action == "fill":
-        if "value" in failure:
-            replacement = F.lit(failure["value"])
-        elif failure.get("method") in {"mean", "median", "mode"}:
-            method = failure["method"]
-            valid_df = df.filter(~invalid_condition)
-            if method == "mean":
-                replacement = F.lit(valid_df.select(F.avg(column)).first()[0])
-            elif method == "median":
-                replacement = F.lit(valid_df.approxQuantile(column, [0.5], 0.0)[0])
-            else:
-                replacement = F.lit(
-                    valid_df.groupBy(column)
-                    .count()
-                    .orderBy(F.desc("count"), F.asc(column))
-                    .first()[0]
-                )
-        else:
-            print("Fill failure action requires 'value' or method 'mean', 'median', or 'mode'.")
-            sys.exit(1)
-
-        print(f"{message} Filling {invalid_count} invalid rows.")
-        return df.withColumn(column, F.when(invalid_condition, replacement).otherwise(F.col(column)))
-
-    # place more failure actions here as needed
-
-    # if no invalid rows, return the original DataFrame
     invalid_count = df.filter(invalid_condition).count()
     if invalid_count == 0:
         return df
 
-    # here and onwards, we have invalid rows
+    action, failure = get_failure_action(parameters)
+
     if action == "fail":
-        print(message)
+        print(f"{message} Invalid rows: {invalid_count}")
         sys.exit(1)
 
-    # no valid action found, exit with error
-    print(f"Error in quality checks: unknown failure action '{action}'.")
-    sys.exit(1)
+    if action == "drop":
+        print(f"{message} Removing {invalid_count} invalid rows.")
+        return df.filter(~invalid_condition)
+
+    if action == "fill" and column is None:
+        print("Primary-key validation cannot use the 'fill' action.")
+        sys.exit(1)
+    replacement = get_fill_value(df, column, invalid_condition, failure)
+    print(f"{message} Filling {invalid_count} invalid rows.")
+
+    return df.withColumn(
+        column,
+        F.when(invalid_condition, replacement).otherwise(F.col(column)),
+    )
 
 
 def validate_allowed_values(df, parameters):
     column = parameters["column"]
     allowed_values = parameters["allowed_values"]
-    invalid_condition = F.col(column).isNull() | ~F.col(column).isin(allowed_values)
+    invalid_condition = ~F.col(column).isin(allowed_values)
 
     return handle_validation_failure(
         df,
@@ -110,14 +144,14 @@ def validate_allowed_values(df, parameters):
     )
 
 
-def validate_positive_numbers(df, parameters):
+def validate_non_negative_numbers(df, parameters):
     column = parameters["column"]
-    invalid_condition = F.col(column).isNull() | (F.col(column) < 0)
+    invalid_condition = (F.col(column) < 0)
 
     return handle_validation_failure(
         df,
         column,
         invalid_condition,
         parameters,
-        f"Validation failed: column '{column}' contains non-positive or null values.",
+        f"Validation failed: column '{column}' contains negative or null values."
     )

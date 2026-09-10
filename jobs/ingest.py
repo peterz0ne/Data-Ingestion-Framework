@@ -73,7 +73,7 @@ def main():
 
         # later, do some enrichment and aggregation and write to the gold layer
 
-        df = run_quality_checks(df, config.get("quality_checks", {}))
+        df = run_quality_checks(df, config.get("quality_checks", []))
 
         df.printSchema()
         df.show(5, truncate=False)
