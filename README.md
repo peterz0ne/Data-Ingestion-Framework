@@ -46,6 +46,11 @@ docker compose run --rm spark-master \
 
 ```sh
 docker compose up -d minio minio-init
+* On windows run:
+```
+docker compose up -d minio minio-init
+docker compose build --no-cache spark-master
 docker compose run --rm spark-master \
-  bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_zones.json"
+  bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_trips.json"
+
 ```

@@ -72,5 +72,164 @@
                 "source_timezone": "America/New_York"
             }
         }
+    ],
+    "quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": "*",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "VendorID",
+                "allowed_values": [1, 2, 6, 7],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_null_values",
+            "parameters": {
+                "column": "*",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "RatecodeID",
+                "allowed_values": [1, 2, 3, 4, 5, 6, 99],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "store_and_fwd_flag",
+                "allowed_values": ["Y", "N"],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "payment_type",
+                "allowed_values": [0, 1, 2, 3, 4, 5, 6],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "passenger_count",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "fare_amount",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "extra",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "mta_tax",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "tip_amount",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "tolls_amount",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "improvement_surcharge",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "total_amount",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "congestion_surcharge",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "Airport_fee",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "trip_distance",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        }
     ]
 }

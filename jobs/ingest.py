@@ -64,16 +64,25 @@ def main():
         # write to bronze layer before doing any transformations or validations
         write_bronze(df, dataset)
 
-        # validate schema and apply operations to transform the data
+        # Validate the source schema before transformations change its columns and types.
         validate_schema(df, config.get("schema"))
+
+        # we first do the quality checks (cleaning) since we might decide to
+        # drop some rows here, and thus avoid some computations in the next step (transformation)
+        # also, in transformation we generate keys, so if we decide to drop stuff after the quality check,
+        # we would have generated keys for data we wouldnt keep (also in the case of incremental keys, we would
+        # have a non-linear key line)
+
+        # assert quality checks and actions
+        df = run_quality_checks(df, config.get("quality_checks", []))
+
+        # apply operations to transform the data
         df = apply_operations(df, config.get("operations", []))
 
         # write to silver layer after transformations and validations
         write_silver(df, dataset)
 
         # later, do some enrichment and aggregation and write to the gold layer
-
-        df = run_quality_checks(df, config.get("quality_checks", []))
 
         df.printSchema()
         df.show(5, truncate=False)
