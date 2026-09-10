@@ -10,10 +10,11 @@ def check_primary_key(df, key_columns):
     missing_key_rows = total_rows - rows_with_keys
 
     duplicate_key_groups = (
-        df.groupBy(*key_columns)
-        .count()
-        .filter(F.col("count") > 1)
-        .count()
+         df.dropna(subset=key_columns)
+         .groupBy(*key_columns)
+         .count()
+         .filter(F.col("count") > 1)
+         .count()
     )
 
     if missing_key_rows > 0 or duplicate_key_groups > 0:
