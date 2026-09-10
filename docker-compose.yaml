@@ -21,7 +21,10 @@ services:
       - spark-network
 
     restart: unless-stopped
-
+    volumes:
+      - ./jobs:/opt/spark/jobs
+      - ./configs:/opt/spark/configs
+      - ./data:/opt/spark/data
     deploy:
       resources:
         limits:
@@ -55,6 +58,10 @@ services:
       - spark-network
 
     restart: unless-stopped
+    volumes:
+      - ./jobs:/opt/spark/jobs
+      - ./configs:/opt/spark/configs
+      - ./data:/opt/spark/data
 
     deploy:
       resources:
@@ -95,6 +102,10 @@ services:
         limits:
           cpus: "4"
           memory: 4G
+    volumes:
+      - ./jobs:/opt/spark/jobs
+      - ./configs:/opt/spark/configs
+      - ./data:/opt/spark/data
 
 
   minio:
