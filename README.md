@@ -17,10 +17,35 @@
 
 
 
-* On windows run:
+## Running with Docker
+
+### macOS / Linux
+
+**With live volume mounts (recommended during development so edits reflect immediately):**
+```sh
+docker compose run --rm --no-deps \
+  -v "$PWD/jobs:/opt/spark/jobs:ro" \
+  -v "$PWD/configs:/opt/spark/configs:ro" \
+  -v "$PWD/data:/opt/spark/data:ro" \
+  spark-master \
+  /opt/spark/bin/spark-submit --master 'local[2]' \
+  /opt/spark/jobs/ingest.py \
+  /opt/spark/configs/taxi_zones.json
 ```
- docker compose up -d minio minio-init
+
+**Using the built container files:**
+```sh
+docker compose up -d minio minio-init
+docker compose run --rm spark-master \
+  /opt/spark/bin/spark-submit --master 'local[2]' \
+  /opt/spark/jobs/ingest.py \
+  /opt/spark/configs/taxi_zones.json
+```
+
+### Windows
+
+```sh
+docker compose up -d minio minio-init
 docker compose run --rm spark-master \
   bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_zones.json"
-
 ```
