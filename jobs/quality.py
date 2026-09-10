@@ -40,6 +40,8 @@ def validate_primary_key(df, parameters):
     return df.drop("_duplicate_key_count")
 
 def run_quality_checks(df, quality_checks):
+    rows_before_checks = df.count()
+    
     for check in quality_checks:
         action = check["action"]
         parameters = check["parameters"]
@@ -54,7 +56,12 @@ def run_quality_checks(df, quality_checks):
             print(f"Unknown quality check: {action}")
             sys.exit(1)
 
-    return df
+    processed_rows = df.count()
+    rejected_rows = rows_before_checks - processed_rows
+    return df, {
+        "processed_rows": processed_rows,
+        "rejected_rows": rejected_rows,
+    }
 
 def get_failure_action(parameters):
     failure = parameters.get("on_failure", {"action": "fail"})

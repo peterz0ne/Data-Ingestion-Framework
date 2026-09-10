@@ -1,5 +1,6 @@
 {
     "dataset": "taxi_zones",
+    "schema_version": "1.0",
     "schema": {
         "LocationID": "int",
         "Borough": "string",

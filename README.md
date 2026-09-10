@@ -49,3 +49,14 @@ docker compose up -d minio minio-init
 docker compose run --rm spark-master \
   bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_zones.json"
 ```
+
+
+## To run inspect_delta.py
+```sh
+docker compose run --rm --no-deps \
+  -v "$PWD/jobs:/opt/spark/jobs:ro" \
+  spark-master \
+  /opt/spark/bin/spark-submit --master 'local[2]' \
+  /opt/spark/jobs/inspect_delta.py \
+  taxi_zones
+```

@@ -1,3 +1,4 @@
+from pyspark import find_spark_home
 import json
 import sys
 
@@ -5,6 +6,11 @@ from pyspark.sql import SparkSession
 from operations import apply_operations
 from schema_validations import validate_schema
 from quality import run_quality_checks
+from metadata import (
+    add_bronze_metadata,
+    create_run_context,
+    write_run_metadata,
+)
 
 def get_config_path():
     if len(sys.argv) != 2:
@@ -61,31 +67,49 @@ def main():
     config_path = get_config_path()
     config = load_config(config_path)
 
+    schema_version = config["schema_version"]
     dataset = config["dataset"]
     source = config["source"]
 
     spark = create_spark(dataset)
+    run_context = create_run_context()
 
     try:
         print(f"Loading dataset: {dataset}")
-        df = read_source(spark, source)
+
+        raw_df = read_source(spark, source)
+        source_files = sorted(raw_df.inputFiles())
+
         print("Source files:")
-        for path in sorted(df.inputFiles()):
+        for path in source_files:
             print(f"  {path}")
 
-        # write to bronze layer before doing any transformations or validations
-        write_bronze(df, dataset)
+        bronze_df = add_bronze_metadata(raw_df, run_context)
+        write_bronze(bronze_df, dataset)
 
-        # validate schema and apply operations to transform the data
-        validate_schema(df, config.get("schema"))
-        df = apply_operations(df, config.get("operations", []))
+        validate_schema(raw_df, config.get("schema"))
 
-        # write to silver layer after transformations and validations
+        df = apply_operations(raw_df, config.get("operations", []))
+
+        df, quality_summary = run_quality_checks(
+            df,
+            config.get("quality_checks", []),
+        )
+
+        processed_rows = quality_summary["processed_rows"]
+        rejected_rows = quality_summary["rejected_rows"]
+
         write_silver(df, dataset)
 
-        # later, do some enrichment and aggregation and write to the gold layer
-
-        df = run_quality_checks(df, config.get("quality_checks", []))
+        write_run_metadata(
+            spark,
+            run_context,
+            dataset,
+            schema_version,
+            source_files,
+            processed_rows,
+            rejected_rows,
+        )
 
         df.printSchema()
         df.show(5, truncate=False)
