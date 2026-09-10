@@ -74,16 +74,14 @@ def generate_primary_key(df, parameters):
     strategy = parameters.get("strategy", "incremental").lower()
     start_value = parameters.get("start", 1)
 
-    if strategy == "uuid":
-        return df.withColumn(column_name, F.uuid())
-    elif strategy == "incremental":
-        return df.withColumn(
-            column_name,
-            F.monotonically_increasing_id() + F.lit(start_value)
-        )
-    else:
-        print("Unknown primary key generation strategy.")
+    if strategy != "incremental":
+        print("Only the incremental primary-key strategy is supported.")
         sys.exit(1)
+
+    return df.withColumn(
+        column_name,
+        F.monotonically_increasing_id() + F.lit(start_value),
+    )
 
 def apply_operations(df, operations):
     for operation in operations:

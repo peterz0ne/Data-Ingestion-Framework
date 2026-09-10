@@ -33,9 +33,21 @@ def read_source(spark, source):
     )
 
 
+# def write_bronze(df, dataset):
+#     target = f"s3a://delta-data/bronze/bronze_{dataset}"
+#     df.write.format("delta").mode("overwrite").save(target)
+#     print(f"Written bronze Delta table to: {target}")
 def write_bronze(df, dataset):
     target = f"s3a://delta-data/bronze/bronze_{dataset}"
-    df.write.format("delta").mode("overwrite").save(target)
+    (
+        df.write
+        .format("delta")
+        .mode("overwrite")
+        .option("delta.minReaderVersion", "2")
+        .option("delta.minWriterVersion", "5")
+        .option("delta.columnMapping.mode", "name")
+        .save(target)
+    )
     print(f"Written bronze Delta table to: {target}")
 
 
