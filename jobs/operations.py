@@ -85,8 +85,6 @@ def generate_primary_key(df, parameters):
         print("Unknown primary key generation strategy.")
         sys.exit(1)
 
-
-
 def apply_operations(df, operations):
     for operation in operations:
         action = operation["action"]
@@ -106,10 +104,6 @@ def apply_operations(df, operations):
             df = cast_columns(df, parameters)
         elif action == "generate_primary_key":
             df = generate_primary_key(df, parameters)
-        elif action == "validate_allowed_values":
-            df = validate_allowed_values(df, parameters)
-        elif action == "validate_positive_numbers":
-            df = validate_positive_numbers(df, parameters)
         else:
             print(f"Unknown operation: {action}")
             sys.exit(1)
