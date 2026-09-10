@@ -101,12 +101,11 @@ Amount of data in each partition: You can partition by a column if you expect da
 
 ### Which datasets should conceptually be treated as lookup tables?
 - The taxi_zone_lookup dataset is a lookup table mapping zone identifiers to zone and borough information.
-- <b>I dont know if the following can be considered 'lookup' tables, since they are just tables that are related to the fact table and have growing data of their own (while taxi_zone_lookup is just an index of some codes, not growing data):</b>Cleaned weather and hourly air quality serve as contextual lookup datasets for enriching trips by time and, where applicable, monitoring site. Their lookup keys must be unique to avoid duplicating taxi trips during joins.
 
 ### Which datasets should not be partitioned? Explain why.
 - Taxi zones and weather: Small datasets where partitioning would add overhead with little benefit (also, we are not expecting them to grow out of proportion).
 - Cleaned hourly air quality: Expected to be small after filtering and aggregation, so initially unpartitioned.
-- Taxi trips, raw air quality, and enriched trips are initially unpartitioned. Reconsider after measuring Delta table sizes and query performance.
+- Taxi trips, raw air quality, and enriched trips are initially unpartitioned. Reconsider after measuring Delta table sizes and query performance. (TODO: maybe we actually should partition air-quality)
 
 ### Which datasets require different partitioning strategies?
 The strategy should depend on each dataset’s size and usage. Taxi trips and enriched trips are candidates for partitioning by pickup year and month. Raw air quality could use observation year and month if time filtering justifies it. Small lookup and contextual tables can remain unpartitioned.
