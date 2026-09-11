@@ -26,45 +26,18 @@ def main():
 
     try:
         for config_path in config_paths:
+
             config = load_config(config_path)
             dataset = config["dataset"]
             print(f"Loading dataset: {dataset}")
-            
 
-            bronze_df = bronze_job(spark, config,run_context)
-            write_bronze(bronze_df, dataset)
+            bronze_job(spark, config,run_context)
         for config_path in config_paths:
-            df, quality_summary = silver_job(spark,config)
-
-            processed_rows = quality_summary["processed_rows"]
-            rejected_rows = quality_summary["rejected_rows"]
-
-            write_silver(df, dataset,config)
+            silver_job(spark,config,run_context)
 
 
-        df_gold = gold_job(spark,
-                 taxi_trips_table="silver/silver_taxi_trips",
-                 taxi_zones_table="silver/silver_taxi_zones",
-                 air_quality_table="silver/silver_air_quality",
-                 weather_table="silver/silver_weather"
-                )
 
-        write_gold(df_gold,"integrated_taxi_trips","pickup_datetime")
-
-
-        write_run_metadata(
-            spark,
-            run_context,
-            dataset,
-            schema_version,
-            source_files,
-            processed_rows,
-            rejected_rows,
-        )
-
-
-        df_gold.printSchema()
-        df_gold.show(5, truncate=False)
+        gold_job(spark)
     finally:
         spark.stop()
 

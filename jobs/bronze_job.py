@@ -1,8 +1,9 @@
 from helpers import *
 from metadata import *
+import gc
 
 
-def bronze_job(spark,config,run_context):
+def bronze_transformation(spark,config,run_context):
     raw_df = read_source(spark, config["source"])
     source_files = sorted(raw_df.inputFiles())
     print("Source files:")
@@ -24,3 +25,9 @@ def write_bronze(df, dataset):
         .save(target)
     )
     print(f"Written bronze Delta table to: {target}")
+
+def bronze_job(spark,config,run_context):
+    df = bronze_transformation(spark,config,run_context)
+    write_bronze(df, config["dataset"])
+    del df
+    gc.collect()

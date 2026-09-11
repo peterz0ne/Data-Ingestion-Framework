@@ -1,10 +1,10 @@
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col
+import gc
 
 
 
-
-def gold_job(spark,
+def gold_transformation(spark,
          taxi_trips_table="silver/silver_taxi_trips",
          taxi_zones_table="silver/silver_taxi_zones",
          air_quality_table="silver/silver_air_quality",
@@ -29,6 +29,7 @@ def gold_job(spark,
     })
 
     df = taxi_trips
+    print("joining taxi data with zones")
     df = df.join(zones_drop, df["dropoff_zone_id"] == zones_drop["dropoff_loc_id"], "left")
     df = df.join(zones_pick, df["pickup_zone_id"] == zones_pick["pickup_loc_id"], "left")
     df = df.drop("dropoff_zone_id", "pickup_zone_id","pickup_loc_id","dropoff_loc_id")
@@ -70,6 +71,7 @@ def gold_job(spark,
         "pu_datetime_hour",
         F.date_trunc("hour", F.col("pickup_datetime"))
     )
+    print("joining taxi data with weather")
 
     df = df.join(
         weather_do
@@ -121,6 +123,7 @@ def gold_job(spark,
         col("method_name").alias("method_name_do"),
         col("method_type").alias("method_type_do")
     )
+    print("joining taxi data with air quality")
 
     df = df.join(
         aq_pu
@@ -145,6 +148,14 @@ def gold_job(spark,
 
 
 def write_gold(df, dataset,partitions):
+    print("writing gold data")
     target = f"s3a://delta-data/gold/gold_{dataset}"
     df.write.format("delta").partitionBy(partitions).mode("overwrite").save(target)
     print(f"Written gold Delta table to: {target}")
+
+
+def gold_job(spark):
+    df = gold_transformation(spark)
+    write_gold(df,"integrated_taxi_trips","pickup_datetime")
+    del df
+    gc.collect()
