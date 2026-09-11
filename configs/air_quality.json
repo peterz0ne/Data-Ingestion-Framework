@@ -1,5 +1,6 @@
 {
     "dataset": "air_quality",
+    "schema_version": "1.0",
     "schema": {
         "State Code": "string",
         "County Code": "string",
