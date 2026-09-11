@@ -58,6 +58,10 @@
                 "hour_column": "hour",
                 "target_column": "observation_datetime"
             }
+        },
+        {
+            "action": "standardize_column_names",
+            "parameters": {}
         }
     ],
     "quality_checks": [

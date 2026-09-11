@@ -103,7 +103,7 @@ Casts selected columns to the requested Spark data types.
   "parameters": {
     "columns": {
       "latitude": "double",
-      "date_gmt": "date"
+      "gmt_date": "date"
     }
   }
 }
@@ -162,6 +162,8 @@ Configured operations, in order:
    - Removes `snwd`, `snwd_source`, `wpgt`, and `wpgt_source` (they are 100% null).
 2. `create_hourly_datetime`
    - Creates `observation_datetime` from `year`, `month`, `day`, and `hour`.
+3. `standardize_column_names`
+   - converts the header names into a standardized format.
 
 The four removed columns are entirely null in the source data, so they cannot contribute useful information to the silver table or duplicate comparisons. The derived hourly timestamp provides a single time field for joins with trip and environmental data while preserving the original calendar fields.
 
@@ -171,15 +173,18 @@ Configured operations, in order:
 
 1. `drop_columns`
    - Removes `Uncertainty` (100% null).
-2. `standardize_column_names`
-   - Converts headers such as `State Code`, `Date GMT`, and `Sample Measurement` to `state_code`, `date_gmt`, and `sample_measurement`.
-3. `generate_primary_key`
+2. `rename_columns`
+   - Renames the raw headers `Date Local`, `Time Local`, `Date GMT`, `Time GMT`, and `Date of Last Change` to `local_date`, `local_time`, `gmt_date`, `gmt_time`, and `last_change_date`.
+   - The `gmt_` prefix preserves the source timezone information, while the date and time fields remain separate until the timestamp is created.
+3. `standardize_column_names`
+   - Converts the remaining headers such as `State Code` and `Sample Measurement` to `state_code` and `sample_measurement`.
+4. `generate_primary_key`
    - Adds an incremental `observation_id` starting at `1`.
-4. `create_timestamp_from_columns`
-   - Combines `date_gmt` and `time_gmt` into `observation_datetime` using `yyyy-MM-dd HH:mm`.
-5. `cast_columns`
+5. `create_timestamp_from_columns`
+   - Combines `gmt_date` and `gmt_time` into `observation_datetime` using `yyyy-MM-dd HH:mm`.
+6. `cast_columns`
    - Casts `latitude`, `longitude`, and `sample_measurement` to `double`.
    - Casts `mdl` to `double`.
-   - Casts `date_local`, `date_gmt`, and `date_of_last_change` to `date`.
+   - Casts `local_date`, `gmt_date`, and `last_change_date` to `date`.
 
 These operations turn the wide CSV source into a consistent analytical schema, create a timestamp for temporal joins, and convert important geographic, measurement, and date fields into usable types.

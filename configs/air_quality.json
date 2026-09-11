@@ -47,6 +47,25 @@
             }
         },
         {
+            "action": "rename_columns",
+            "parameters": {
+                "source": [
+                    "Date Local",
+                    "Time Local",
+                    "Date GMT",
+                    "Time GMT",
+                    "Date of Last Change"
+                ],
+                "target": [
+                    "local_date",
+                    "local_time",
+                    "gmt_date",
+                    "gmt_time",
+                    "last_change_date"
+                ]
+            }
+        },
+        {
             "action": "standardize_column_names",
             "parameters": {}
         },
@@ -61,8 +80,8 @@
         {
             "action": "create_timestamp_from_columns",
             "parameters": {
-                "date_column": "date_gmt",
-                "time_column": "time_gmt",
+                "date_column": "gmt_date",
+                "time_column": "gmt_time",
                 "target_column": "observation_datetime",
                 "format": "yyyy-MM-dd HH:mm"
             }
@@ -75,9 +94,9 @@
                     "longitude": "double",
                     "sample_measurement": "double",
                     "mdl": "double",
-                    "date_local": "date",
-                    "date_gmt": "date",
-                    "date_of_last_change": "date"
+                    "local_date": "date",
+                    "gmt_date": "date",
+                    "last_change_date": "date"
                 }
             }
         }
