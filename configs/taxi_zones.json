@@ -39,10 +39,39 @@
             "action": "validate_primary_key",
             "parameters": {
                 "columns": [
-                    "location_id"
+                    "LocationID"
                 ],
                 "on_failure": {
-                    "action": "drop"
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_null_values",
+            "parameters": {
+                "column": "Borough",
+                "null_values": ["N/A"],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_null_values",
+            "parameters": {
+                "column": "Zone",
+                "null_values": ["N/A"],
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": "*",
+                "on_failure": {
+                    "action": "warn"
                 }
             }
         }

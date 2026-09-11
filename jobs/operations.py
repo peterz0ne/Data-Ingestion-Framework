@@ -2,6 +2,7 @@ import sys
 import re
 
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 def rename_columns(df, parameters):
     source_columns = parameters["source"]
@@ -24,6 +25,9 @@ def standardize_column_names(df):
         df = df.withColumnRenamed(column, standardized_name)
 
     return df
+
+def drop_columns(df, parameters):
+    return df.drop(*parameters["columns"])
 
 def convert_to_utc(df, parameters):
     columns = parameters["columns"]
@@ -92,6 +96,8 @@ def apply_operations(df, operations):
             df = rename_columns(df, parameters)
         elif action == "standardize_column_names":
             df = standardize_column_names(df)
+        elif action == "drop_columns":
+            df = drop_columns(df, parameters)
         elif action == "convert_to_utc":
             df = convert_to_utc(df, parameters)
         elif action == "create_hourly_datetime":

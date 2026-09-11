@@ -87,9 +87,20 @@ def main():
         bronze_df = add_bronze_metadata(raw_df, run_context)
         write_bronze(bronze_df, dataset)
 
+        # Validate the source schema before transformations change its columns and types.
         validate_schema(raw_df, config.get("schema"))
 
-        df = apply_operations(raw_df, config.get("operations", []))
+        # we first do the quality checks (cleaning) since we might decide to
+        # drop some rows here, and thus avoid some computations in the next step (transformation)
+        # also, in transformation we generate keys, so if we decide to drop stuff after the quality check,
+        # we would have generated keys for data we wouldnt keep (also in the case of incremental keys, we would
+        # have a non-linear key line)
+
+        # assert quality checks and actions
+        df = run_quality_checks(raw_df, config.get("quality_checks", []))
+
+        # apply operations to transform the data
+        df = apply_operations(df, config.get("operations", []))
 
         df, quality_summary = run_quality_checks(
             df,
