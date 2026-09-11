@@ -115,7 +115,7 @@
             "parameters": {
                 "columns": "*",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         }

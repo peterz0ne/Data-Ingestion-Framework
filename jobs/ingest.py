@@ -97,15 +97,10 @@ def main():
         # have a non-linear key line)
 
         # assert quality checks and actions
-        df = run_quality_checks(raw_df, config.get("quality_checks", []))
+        df, quality_summary = run_quality_checks(raw_df, config.get("quality_checks", []))
 
         # apply operations to transform the data
         df = apply_operations(df, config.get("operations", []))
-
-        df, quality_summary = run_quality_checks(
-            df,
-            config.get("quality_checks", []),
-        )
 
         processed_rows = quality_summary["processed_rows"]
         rejected_rows = quality_summary["rejected_rows"]

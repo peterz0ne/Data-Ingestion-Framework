@@ -42,7 +42,7 @@ def validate_primary_key(df, parameters):
 
 def run_quality_checks(df, quality_checks):
     rows_before_checks = df.count()
-    
+
     for check in quality_checks:
         action = check["action"]
         parameters = check["parameters"]

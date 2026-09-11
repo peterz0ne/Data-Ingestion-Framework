@@ -42,7 +42,7 @@
                     "LocationID"
                 ],
                 "on_failure": {
-                    "action": "warn"
+                    "action": "fail"
                 }
             }
         },

@@ -85,7 +85,7 @@ The taxi-zone lookup is a reference table used later to enrich taxi trips with b
 - `validate_null_values` checks `Borough` and `Zone` because these are the two attributes needed for taxi-trip enrichment. The source represents missing values as `N/A`, so `null_values: ["N/A"]` is configured for both columns.
 - `validate_duplicates` uses `*`, meaning the complete row is compared. This verifies that the lookup data does not contain repeated records.
 
-For this reference dataset, missing borough or zone values are currently warned about rather than removed, because the issue needs to remain visible while the lookup is assessed. Duplicate lookup rows should be dropped when cleaning the data because they can make enrichment ambiguous. The primary-key check assertion makes the build to fail if the primary keys were invalid, to act as a diagnostic tool because the uniqueness of `LocationID` should be verified rather than assumed.
+For this reference dataset, missing borough or zone values are currently warned about rather than removed, because the issue needs to remain visible while the lookup is assessed. Duplicate lookup rows should be dropped when cleaning the data because they can make enrichment ambiguous (but for the first assignment we will only doing warn). The primary-key check assertion makes the build to fail if the primary keys were invalid, to act as a diagnostic tool because the uniqueness of `LocationID` should be verified rather than assumed.
 
 ### Taxi trips
 
@@ -133,7 +133,7 @@ Weather records are hourly observations. The combination of `year`, `month`, `da
 
 These checks catch impossible calendar values and negative measurements while preserving the hourly key used for the weather analysis. Take note that *temp* can take negative values so we don't place a quality check for it
 
-Missing values, if checked later, should initially be warned about rather than dropped because they may affect only optional weather measurements. Invalid calendar ranges, negative measurements, and duplicate observations should be dropped because they cannot be trusted for hourly analysis. The primary-key result is also useful for deciding whether the proposed hourly key is reliable. These action choices may change after examining the amount of missing and invalid weather data.
+Missing values, if checked later, should initially be warned about rather than dropped because they may affect only optional weather measurements. Invalid calendar ranges, negative measurements, and duplicate observations should be dropped because they cannot be trusted for hourly analysis. The primary-key result is also useful for deciding whether the proposed hourly key is reliable (we fail the build if validate_primary_key fails). These action choices may change after examining the amount of missing and invalid weather data.
 
 ### Air quality
 

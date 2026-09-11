@@ -71,37 +71,7 @@
                     "hour"
                 ],
                 "on_failure": {
-                    "action": "warn"
-                }
-            }
-        },
-        {
-            "action": "validate_duplicates",
-            "parameters": {
-                "columns": [
-                    "year",
-                    "month",
-                    "day",
-                    "hour",
-                    "temp",
-                    "temp_source",
-                    "rhum",
-                    "rhum_source",
-                    "prcp",
-                    "prcp_source",
-                    "wdir",
-                    "wdir_source",
-                    "wspd",
-                    "wspd_source",
-                    "pres",
-                    "pres_source",
-                    "cldc",
-                    "cldc_source",
-                    "coco",
-                    "coco_source"
-                ],
-                "on_failure": {
-                    "action": "drop"
+                    "action": "fail"
                 }
             }
         },
@@ -125,7 +95,7 @@
                     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
                 ],
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -134,7 +104,7 @@
             "parameters": {
                 "column": "year",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -148,7 +118,7 @@
                         16, 17, 18, 19, 20, 21, 22, 23
                     ],
                     "on_failure": {
-                        "action": "warn"
+                        "action": "drop"
                     }
                 }
         },
@@ -157,7 +127,7 @@
             "parameters": {
                 "column": "rhum",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -166,7 +136,7 @@
             "parameters": {
                 "column": "prcp",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -175,7 +145,7 @@
             "parameters": {
                 "column": "wdir",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -184,7 +154,7 @@
             "parameters": {
                 "column": "wspd",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -194,7 +164,7 @@
             "parameters": {
                 "column": "pres",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         },
@@ -203,7 +173,7 @@
             "parameters": {
                 "column": "cldc",
                 "on_failure": {
-                    "action": "warn"
+                    "action": "drop"
                 }
             }
         }
