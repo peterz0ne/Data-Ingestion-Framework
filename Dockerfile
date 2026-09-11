@@ -2,9 +2,19 @@ FROM apache/spark:4.0.4-scala2.13-java17-python3-ubuntu
 
 USER root
 
-RUN pip install --no-cache-dir \
-    delta-spark==4.0.0
+# Give the Spark user a real home directory.
+RUN mkdir -p /home/spark \
+    && chown -R spark:spark /home/spark
 
+ENV HOME=/home/spark
+ENV JUPYTER_RUNTIME_DIR=/home/spark/.local/share/jupyter/runtime
+
+# Delta Lake + JupyterLab
+RUN pip install --no-cache-dir \
+    delta-spark==4.0.0 \
+    jupyterlab
+
+# Delta Lake + S3/MinIO dependencies
 RUN curl -fL \
     https://repo1.maven.org/maven2/io/delta/delta-spark_2.13/4.0.0/delta-spark_2.13-4.0.0.jar \
     -o /opt/spark/jars/delta-spark_2.13-4.0.0.jar \
@@ -23,10 +33,22 @@ COPY jobs /opt/spark/jobs
 COPY configs /opt/spark/configs
 COPY data /opt/spark/data
 
-RUN mkdir -p /opt/spark/work-dir \
-    && chown -R spark:spark /opt/spark/jobs /opt/spark/configs /opt/spark/data /opt/spark/work-dir \
+RUN mkdir -p \
+        /opt/spark/work-dir \
+        /opt/spark/notebooks \
+        /home/spark/.local/share/jupyter/runtime \
+    && chown -R spark:spark \
+        /opt/spark/jobs \
+        /opt/spark/configs \
+        /opt/spark/data \
+        /opt/spark/work-dir \
+        /opt/spark/notebooks \
+        /home/spark \
     && chown spark:spark /opt/spark/jars/*.jar
 
 USER spark
+
+ENV HOME=/home/spark
+ENV JUPYTER_RUNTIME_DIR=/home/spark/.local/share/jupyter/runtime
 
 WORKDIR /opt/spark/work-dir

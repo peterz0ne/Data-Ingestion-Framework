@@ -133,6 +133,59 @@ services:
 
     restart: unless-stopped
 
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: jupyter
+    hostname: jupyter
+
+    command: >
+      jupyter lab
+      --ip=0.0.0.0
+      --port=8888
+      --no-browser
+
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+
+    ports:
+      - "8888:8888"
+
+    environment:
+      HOME: /home/spark
+      JUPYTER_RUNTIME_DIR: /home/spark/.local/share/jupyter/runtime
+
+      SPARK_MASTER: spark://spark-master:7077
+      SPARK_LOCAL_IP: jupyter
+      SPARK_DRIVER_HOST: jupyter
+      SPARK_DRIVER_PORT: "4041"
+
+      PYSPARK_PYTHON: python3
+      PYSPARK_DRIVER_PYTHON: python3
+
+    networks:
+      - spark-network
+
+    volumes:
+      - ./jobs:/opt/spark/jobs
+      - ./configs:/opt/spark/configs
+      - ./data:/opt/spark/data
+      - ./notebooks:/opt/spark/notebooks
+
+    restart: unless-stopped
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+
+
+
 
   minio-init:
     image: minio/mc:latest
