@@ -1,0 +1,137 @@
+from pyspark.sql import functions as F
+from pyspark.sql.functions import col
+
+
+
+
+def gold_job(spark,
+         taxi_trips_location="s3a://delta-data/silver/silver_taxi_trips",
+         taxi_zones_location="s3a://delta-data/silver/silver_taxi_zones",
+         air_quality_location="s3a://delta-data/silver/silver_air_quality",
+         weather_location="s3a://delta-data/silver/silver_weather"
+         ):
+    taxi_trips = spark.read.format("delta").load("s3a://delta-data/silver/silver_taxi_trips")
+    taxi_zones = spark.read.format("delta").load("s3a://delta-data/silver/silver_taxi_zones")
+    air_quality = spark.read.format("delta").load("s3a://delta-data/silver/silver_air_quality")
+    weather = spark.read.format("delta").load("s3a://delta-data/silver/silver_weather")
+
+    zones_drop = taxi_zones.withColumnsRenamed({
+        "location_id": "dropoff_loc_id",
+        "borough":"dropoff_borough",
+        "zone": "dropoff_zone_name"  # adjust based on your actual column names
+    })  
+    zones_pick = taxi_zones.withColumnsRenamed({
+        "location_id": "pickup_loc_id",
+        "borough":"pickup_borough",
+        "zone": "pickup_zone_name"
+    })
+
+    df = taxi_trips
+    df = df.join(zones_drop, df["dropoff_zone_id"] == zones_drop["dropoff_loc_id"], "left")
+    df = df.join(zones_pick, df["pickup_zone_id"] == zones_pick["pickup_loc_id"], "left")
+    df = df.drop("dropoff_zone_id", "pickup_zone_id","pickup_loc_id","dropoff_loc_id")
+
+    weather_pu = weather.select(
+        col("temp").alias("temp_pu"),
+        col("rhum").alias("rhum_pu"),
+        col("prcp").alias("prcp_pu"),
+        col("snwd").alias("snwd_pu"),
+        col("wdir").alias("wdir_pu"),
+        col("wspd").alias("wspd_pu"),
+        col("wpgt").alias("wpgt_pu"),
+        col("pres").alias("pres_pu"),
+        col("cldc").alias("cldc_pu"),
+        col("observation_datetime").alias("observation_datetime_pu"),
+        col("coco").alias("coco_pu")
+    )
+
+
+    weather_do = weather.select(
+        col("temp").alias("temp_do"),
+        col("rhum").alias("rhum_do"),
+        col("prcp").alias("prcp_do"),
+        col("snwd").alias("snwd_do"),
+        col("wdir").alias("wdir_do"),
+        col("wspd").alias("wspd_do"),
+        col("wpgt").alias("wpgt_do"),
+        col("pres").alias("pres_do"),
+        col("cldc").alias("cldc_do"),
+        col("observation_datetime").alias("observation_datetime_do"),
+        col("coco").alias("coco_do")
+    )
+
+    df = df.withColumn(
+        "do_datetime_hour",
+        F.date_trunc("hour", F.col("dropoff_datetime"))
+    )
+    df = df.withColumn(
+        "pu_datetime_hour",
+        F.date_trunc("hour", F.col("pickup_datetime"))
+    )
+
+    df = df.join(
+        weather_do
+        ,df["do_datetime_hour"] == weather_do["observation_datetime_do"]
+        ,"left"
+    )
+
+    df = df.join(
+        weather_pu
+        ,df["pu_datetime_hour"] == weather_pu["observation_datetime_pu"]
+        ,"left"
+    )
+
+    df = df.drop("observation_datetime_pu", "observation_datetime_do")
+
+    df_aq= air_quality.filter(air_quality.state_name == "New York")
+    df_aq = df_aq.drop("date_local","time_local","time_gmt","date_gmt","site_num","state_name","Latitude","Longitude","parameter_code","state_code","county_code","POC","Datum","county_name","method_code","date_of_last_change","observation_id")
+
+    df_aq = df_aq.groupBy("observation_datetime").agg(
+        F.avg("sample_measurement").alias("average_value"),
+        F.avg("MDL").alias("MDL"),
+        F.concat_ws(", ", F.collect_list("Qualifier")).alias("Qualifiers"),
+        F.max("parameter_name").alias("parameter_name"), # it is constant between the values
+        F.max("units_of_measure").alias("units_of_measure"), # it is constant between the values
+        F.max("Uncertainty").alias("Uncertainty"), # it is constant between the values
+        F.max("method_name").alias("method_name"), # it is constant between the values
+        F.max("method_type").alias("method_type") # it is constant between the values
+    )
+
+    aq_pu = df_aq.select(
+        col("average_value").alias("average_value_pu"),
+        col("MDL").alias("MDL_pu"),
+        col("observation_datetime").alias("observation_datetime_pu"),
+        col("Qualifiers").alias("Qualifiers_pu"),
+        col("parameter_name").alias("parameter_name_pu"),
+        col("units_of_measure").alias("units_of_measure_pu"),
+        col("Uncertainty").alias("Uncertainty_pu"),
+        col("method_name").alias("method_name_pu"),
+        col("method_type").alias("method_type_pu")
+    )
+    aq_do = df_aq.select(
+        col("average_value").alias("average_value_do"),
+        col("MDL").alias("MDL_do"),
+        col("observation_datetime").alias("observation_datetime_do"),
+        col("Qualifiers").alias("Qualifiers_do"),
+        col("parameter_name").alias("parameter_name_do"),
+        col("units_of_measure").alias("units_of_measure_do"),
+        col("Uncertainty").alias("Uncertainty_do"),
+        col("method_name").alias("method_name_do"),
+        col("method_type").alias("method_type_do")
+    )
+
+    df = df.join(
+        aq_pu
+        ,df["pu_datetime_hour"] == aq_pu["observation_datetime_pu"]
+        ,"left"
+    )
+
+    df = df.join(
+        aq_do
+        ,df["do_datetime_hour"] == aq_do["observation_datetime_do"]
+        ,"left"
+    )
+
+    df = df.drop("observation_datetime_pu", "observation_datetime_do")
+
+    return df
