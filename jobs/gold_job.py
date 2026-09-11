@@ -5,15 +5,15 @@ from pyspark.sql.functions import col
 
 
 def gold_job(spark,
-         taxi_trips_location="s3a://delta-data/silver/silver_taxi_trips",
-         taxi_zones_location="s3a://delta-data/silver/silver_taxi_zones",
-         air_quality_location="s3a://delta-data/silver/silver_air_quality",
-         weather_location="s3a://delta-data/silver/silver_weather"
+         taxi_trips_table="silver/silver_taxi_trips",
+         taxi_zones_table="silver/silver_taxi_zones",
+         air_quality_table="silver/silver_air_quality",
+         weather_table="silver/silver_weather"
          ):
-    taxi_trips = spark.read.format("delta").load("s3a://delta-data/silver/silver_taxi_trips")
-    taxi_zones = spark.read.format("delta").load("s3a://delta-data/silver/silver_taxi_zones")
-    air_quality = spark.read.format("delta").load("s3a://delta-data/silver/silver_air_quality")
-    weather = spark.read.format("delta").load("s3a://delta-data/silver/silver_weather")
+    taxi_trips = spark.read.format("delta").load(f"s3a://delta-data/{taxi_trips_table}")
+    taxi_zones = spark.read.format("delta").load(f"s3a://delta-data/{taxi_zones_table}")
+    air_quality = spark.read.format("delta").load(f"s3a://delta-data/{air_quality_table}")
+    weather = spark.read.format("delta").load(f"s3a://delta-data/{weather_table}")
 
     zones_drop = taxi_zones.withColumnsRenamed({
         "location_id": "dropoff_loc_id",
@@ -136,4 +136,15 @@ def gold_job(spark,
 
     df = df.drop("observation_datetime_pu", "observation_datetime_do")
 
+    df = df.withColumn(
+        "date",
+        F.to_date("pickup_datetime")
+    )
+
     return df
+
+
+def write_gold(df, dataset,partitions):
+    target = f"s3a://delta-data/gold/gold_{dataset}"
+    df.write.format("delta").partitionBy(partitions).mode("overwrite").save(target)
+    print(f"Written gold Delta table to: {target}")

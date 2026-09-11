@@ -13,6 +13,15 @@ def get_config_path():
     return sys.argv[1]
 
 
+def get_config_paths():
+    return [
+        "/opt/spark/configs/taxi_zones.json",
+        "/opt/spark/configs/taxi_trips.json",
+        "/opt/spark/configs/air_quality.json",
+        "/opt/spark/configs/weather.json",
+    ]
+
+
 def load_config(config_path):
     with open(config_path) as file:
         return json.load(file)
@@ -31,27 +40,8 @@ def read_source(spark, source):
         .load(source["paths"])
     )
 
-def write_bronze(df, dataset):
-    target = f"s3a://delta-data/bronze/bronze_{dataset}"
-    (
-        df.write
-        .format("delta")
-        .mode("overwrite")
-        .option("delta.minReaderVersion", "2")
-        .option("delta.minWriterVersion", "5")
-        .option("delta.columnMapping.mode", "name")
-        .option("overwriteSchema", "true")
-        .save(target)
-    )
-    print(f"Written bronze Delta table to: {target}")
 
 
-def write_silver(df, dataset):
-    target = f"s3a://delta-data/silver/silver_{dataset}"
-    df.write.format("delta").mode("overwrite").save(target)
-    print(f"Written silver Delta table to: {target}")
 
-def write_gold(df, dataset):
-    target = f"s3a://delta-data/silver/gold_{dataset}"
-    df.write.format("delta").mode("overwrite").save(target)
-    print(f"Written gold Delta table to: {target}")
+
+
