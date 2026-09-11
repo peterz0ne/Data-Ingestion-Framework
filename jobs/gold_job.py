@@ -156,6 +156,6 @@ def write_gold(df, dataset,partitions):
 
 def gold_job(spark):
     df = gold_transformation(spark)
-    write_gold(df,"integrated_taxi_trips","pickup_datetime")
+    write_gold(df,"integrated_taxi_trips","date")
     del df
     gc.collect()
