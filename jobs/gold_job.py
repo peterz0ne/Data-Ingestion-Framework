@@ -18,12 +18,14 @@ def gold_job(spark,
     zones_drop = taxi_zones.withColumnsRenamed({
         "location_id": "dropoff_loc_id",
         "borough":"dropoff_borough",
+        "service_zone": "dropoff_service_zone",
         "zone": "dropoff_zone_name"  # adjust based on your actual column names
     })  
     zones_pick = taxi_zones.withColumnsRenamed({
         "location_id": "pickup_loc_id",
         "borough":"pickup_borough",
-        "zone": "pickup_zone_name"
+        "zone": "pickup_zone_name",
+        "service_zone": "pickup_service_zone"
     })
 
     df = taxi_trips
