@@ -19,48 +19,13 @@
 
 ## Running with Docker
 
-### macOS / Linux
-
-**With live volume mounts (recommended during development so edits reflect immediately):**
+To setup the environment install docker and run the following command
 ```sh
-docker compose run --rm --no-deps \
-  -v "$PWD/jobs:/opt/spark/jobs:ro" \
-  -v "$PWD/configs:/opt/spark/configs:ro" \
-  -v "$PWD/data:/opt/spark/data:ro" \
-  spark-master \
-  /opt/spark/bin/spark-submit --master 'local[2]' \
-  /opt/spark/jobs/ingest.py \
-  /opt/spark/configs/taxi_zones.json
+docker compose up --build -d
 ```
+This will create the containers and start the right away.
 
-**Using the built container files:**
+To run the pipeline execute the following command:
 ```sh
-docker compose up -d minio minio-init
-docker compose run --rm spark-master \
-  /opt/spark/bin/spark-submit --master 'local[2]' \
-  /opt/spark/jobs/ingest.py \
-  /opt/spark/configs/taxi_zones.json
-```
-
-### Windows
-
-```sh
-docker compose up -d minio minio-init
-* On windows run:
-```
-docker compose up -d minio minio-init
-docker compose build --no-cache spark-master
-docker compose run --rm spark-master \
-  bash -lc "/opt/spark/bin/spark-submit --master local[2] /opt/spark/jobs/ingest.py /opt/spark/configs/taxi_trips.json"
-```
-
-
-## To run inspect_delta.py
-```sh
-docker compose run --rm --no-deps \
-  -v "$PWD/jobs:/opt/spark/jobs:ro" \
-  spark-master \
-  /opt/spark/bin/spark-submit --master 'local[2]' \
-  /opt/spark/jobs/inspect_delta.py \
-  taxi_zones
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/ingest.py
 ```
