@@ -1,0 +1,77 @@
+from pyspark.sql import SparkSession
+from operations import apply_operations
+from schema_validations import validate_schema
+from helpers import *
+from metadata import *
+from quality import run_quality_checks
+from metadata import (
+    add_bronze_metadata,
+    create_run_context,
+    write_run_metadata,
+)
+import gc
+from bronze_job import read_bronze
+
+from helpers import *
+
+
+# the location prefix of silver layer dataset in the object storage
+SILVER_LAYER_DATASET_LOCATION = "s3a://delta-data/silver/silver_"
+
+
+def silver_job(spark, config, run_context):
+    transformed_data, quality_summary = read_and_transform_bronze(spark, config)
+    processed_rows = quality_summary["processed_rows"]
+    rejected_rows = quality_summary["rejected_rows"]
+
+    write_silver(transformed_data, config)
+
+    write_run_metadata(
+        spark,
+        run_context,
+        config["dataset"],
+        config["schema_version"],
+        # [],
+        processed_rows,
+        rejected_rows,
+    )
+
+    # free up unused memory
+    del df
+    gc.collect()
+
+
+def read_and_transform_bronze(spark, config):
+    bronze_data = read_bronze(spark, config["dataset"])
+    validate_schema(bronze_data, config.get("schema"))
+    cleaned_data, quality_summary = run_quality_checks(
+        bronze_data,
+        config.get("quality_checks", [])
+    )
+    transformed_data = apply_operations(cleaned_data, config.get("operations", []))
+    return transformed_data, quality_summary
+
+
+def write_silver(df, config):
+    target = f"{SILVER_LAYER_DATASET_LOCATION}{config['dataset']}"
+    if ("partitions" in config.keys() and config["partitions"]):
+        (
+            df.write.format("delta")
+            .partitionBy(config["partitions"])
+            .mode("overwrite")
+            .option("overwriteSchema", "true") # maybe not needed?
+            .save(target)
+        )
+    else:
+        (
+            df.write.format("delta")
+            .mode("overwrite")
+            .option("overwriteSchema", "true") # maybe not needed?
+            .save(target)
+        )
+
+    print(f"Written silver Delta table to: {target}")
+
+
+def read_silver(spark,dataset):
+    return spark.read.format("delta").load(f"{SILVER_LAYER_DATASET_LOCATION}{dataset}")

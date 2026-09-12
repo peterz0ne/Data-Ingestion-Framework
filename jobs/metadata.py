@@ -20,13 +20,15 @@ def add_bronze_metadata(df, run_context):
         .withColumn("ingestion_run_id", F.lit(run_context["run_id"]))
     )
 
+def rm_bronze_metadata(df):
+    return df.drop("source_file_path", "ingested_at", "ingestion_run_id")
 
 def write_run_metadata(
     spark,
     run_context,
     dataset,
     schema_version,
-    source_files,
+    # source_files,
     processed_rows,
     rejected_rows,
 ):
@@ -42,7 +44,7 @@ def write_run_metadata(
                 run_context["run_id"],
                 dataset,
                 schema_version,
-                ", ".join(source_files),
+                # ", ".join(source_files),
                 processed_rows,
                 rejected_rows,
                 run_context["started_at"],
@@ -55,7 +57,7 @@ def write_run_metadata(
             "run_id",
             "dataset",
             "schema_version",
-            "source_files",
+            # "source_files",
             "processed_rows",
             "rejected_rows",
             "started_at",
