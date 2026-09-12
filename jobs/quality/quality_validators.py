@@ -4,7 +4,10 @@ from operator import and_
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
-from .quality_failure_handling import handle_validation_failure
+from .quality_failure_handling import (
+    get_failure_action,
+    handle_validation_failure,
+)
 
 def validate_allowed_values(df, parameters):
     column = parameters["column"]
@@ -126,6 +129,12 @@ def validate_duplicates(df, parameters):
     columns = parameters["columns"]
     if columns == "*":
         columns = df.columns
+
+    failure_action, _ = get_failure_action(parameters)
+
+    if failure_action == "drop":
+        print(f"Deduplicating records using columns: {columns}.")
+        return df.dropDuplicates(columns)
 
     df = add_duplicate_count_validate_duplicates(
         df,
