@@ -10,7 +10,7 @@
     "source": {
         "format": "csv",
         "paths": [
-            "/opt/spark/data/taxi_zone_lookup/taxi_zone_lookup.csv"
+            "/opt/spark/landing/taxi_zone_lookup/taxi_zone_lookup.csv"
         ],
         "options": {
             "header": true,

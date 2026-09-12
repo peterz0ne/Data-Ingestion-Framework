@@ -30,7 +30,7 @@
     "source": {
         "format": "csv",
         "paths": [
-            "/opt/spark/data/air_quality/hourly_88101_2024.csv"
+            "/opt/spark/landing/air_quality/hourly_88101_2024.csv"
         ],
         "options": {
             "header": true,

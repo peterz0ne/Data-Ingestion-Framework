@@ -24,7 +24,7 @@ services:
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
-      - ./data:/opt/spark/data
+      - ./landing:/opt/spark/landing
     deploy:
       resources:
         limits:
@@ -61,7 +61,7 @@ services:
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
-      - ./data:/opt/spark/data
+      - ./landing:/opt/spark/landing
 
     deploy:
       resources:
@@ -105,7 +105,7 @@ services:
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
-      - ./data:/opt/spark/data
+      - ./landing:/opt/spark/landing
 
 
   minio:
@@ -173,7 +173,7 @@ services:
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
-      - ./data:/opt/spark/data
+      - ./landing:/opt/spark/landing
       - ./notebooks:/opt/spark/notebooks
 
     restart: unless-stopped

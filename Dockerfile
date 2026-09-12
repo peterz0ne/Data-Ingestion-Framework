@@ -31,7 +31,7 @@ RUN curl -fL \
 COPY conf/spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 COPY jobs /opt/spark/jobs
 COPY configs /opt/spark/configs
-COPY data /opt/spark/data
+COPY landing /opt/spark/landing
 
 RUN mkdir -p \
         /opt/spark/work-dir \
@@ -40,7 +40,7 @@ RUN mkdir -p \
     && chown -R spark:spark \
         /opt/spark/jobs \
         /opt/spark/configs \
-        /opt/spark/data \
+        /opt/spark/landing \
         /opt/spark/work-dir \
         /opt/spark/notebooks \
         /home/spark \

@@ -30,7 +30,7 @@
     "source": {
         "format": "csv",
         "paths": [
-            "/opt/spark/data/weather/weather.csv"
+            "/opt/spark/landing/weather/weather.csv"
         ],
         "options": {
             "header": true,

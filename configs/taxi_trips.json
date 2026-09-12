@@ -25,9 +25,9 @@
     "source": {
         "format": "parquet",
         "paths": [
-            "/opt/spark/data/taxi/yellow_tripdata_2024-01.parquet",
-            "/opt/spark/data/taxi/yellow_tripdata_2024-02.parquet",
-            "/opt/spark/data/taxi/yellow_tripdata_2024-03.parquet"
+            "/opt/spark/landing/taxi/yellow_tripdata_2024-01.parquet",
+            "/opt/spark/landing/taxi/yellow_tripdata_2024-02.parquet",
+            "/opt/spark/landing/taxi/yellow_tripdata_2024-03.parquet"
         ],
         "options": {}
     },
