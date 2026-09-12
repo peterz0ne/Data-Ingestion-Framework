@@ -10,11 +10,12 @@ from metadata import (
     write_run_metadata,
 )
 import gc
+from bronze_job import read_bronze
 
 from helpers import *
 
 def silver_transformations(spark,config):
-    df= read_source(spark,config["source"])
+    df = read_bronze(spark,config["dataset"])
     validate_schema(df, config.get("schema"))
     df = apply_operations(df, config.get("operations", []))
     return run_quality_checks(
@@ -31,6 +32,10 @@ def write_silver(df, config):
 
     print(f"Written silver Delta table to: {target}")
 
+def read_silver(spark,dataset):
+    return spark.read.format("delta").load(f"s3a://delta-data/silver/silver_{dataset}")
+
+
 def silver_job(spark,config,run_context):
     df, quality_summary = silver_transformations(spark,config)
     processed_rows = quality_summary["processed_rows"]
@@ -38,17 +43,14 @@ def silver_job(spark,config,run_context):
 
     write_silver(df,config)
 
-    raw_df = read_source(spark, config["source"])
-    source_files = sorted(raw_df.inputFiles())
     write_run_metadata(
                 spark,
                 run_context,
                 config["dataset"],
                 config["schema_version"],
-                source_files,
+                [],
                 processed_rows,
                 rejected_rows,
             )
     del df
-    del raw_df
     gc.collect()

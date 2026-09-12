@@ -1,19 +1,20 @@
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col
+from silver_job import read_silver
 import gc
 
 
 
 def gold_transformation(spark,
-         taxi_trips_table="silver/silver_taxi_trips",
-         taxi_zones_table="silver/silver_taxi_zones",
-         air_quality_table="silver/silver_air_quality",
-         weather_table="silver/silver_weather"
+         taxi_trips_table="taxi_trips",
+         taxi_zones_table="taxi_zones",
+         air_quality_table="air_quality",
+         weather_table="weather"
          ):
-    taxi_trips = spark.read.format("delta").load(f"s3a://delta-data/{taxi_trips_table}")
-    taxi_zones = spark.read.format("delta").load(f"s3a://delta-data/{taxi_zones_table}")
-    air_quality = spark.read.format("delta").load(f"s3a://delta-data/{air_quality_table}")
-    weather = spark.read.format("delta").load(f"s3a://delta-data/{weather_table}")
+    taxi_trips = read_silver(spark,taxi_trips_table)
+    taxi_zones = read_silver(spark,taxi_zones_table)
+    air_quality = read_silver(spark,air_quality_table)
+    weather = read_silver(spark,weather_table)
 
     zones_drop = taxi_zones.withColumnsRenamed({
         "location_id": "dropoff_loc_id",

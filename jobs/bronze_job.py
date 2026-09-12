@@ -3,7 +3,7 @@ from metadata import *
 import gc
 
 
-def bronze_transformation(spark,config,run_context):
+def read_landing_and_add_metadata(spark,config,run_context):
     raw_df = read_source(spark, config["source"])
     source_files = sorted(raw_df.inputFiles())
     print("Source files:")
@@ -26,8 +26,14 @@ def write_bronze(df, dataset):
     )
     print(f"Written bronze Delta table to: {target}")
 
+def read_bronze(spark,dataset):
+    df= spark.read.format("delta").load(f"s3a://delta-data/bronze/bronze_{dataset}")
+    return df.drop("source_file_path", "ingested_at","ingestion_run_id")
+    
+
+
 def bronze_job(spark,config,run_context):
-    df = bronze_transformation(spark,config,run_context)
+    df = read_landing_and_add_metadata(spark,config,run_context)
     write_bronze(df, config["dataset"])
     del df
     gc.collect()
