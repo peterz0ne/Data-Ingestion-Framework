@@ -56,6 +56,22 @@
             }
         },
         {
+            "action": "format_datetime",
+            "parameters": {
+                "source_column": "pickup_datetime",
+                "target_column": "pickup_date",
+                "format": "yyyy-MM-dd"
+            }
+        },
+        {
+            "action": "format_datetime",
+            "parameters": {
+                "source_column": "dropoff_datetime",
+                "target_column": "dropoff_date",
+                "format": "yyyy-MM-dd"
+            }
+        },
+        {
             "action": "generate_primary_key",
             "parameters": {
                 "column": "trip_id",

@@ -93,6 +93,23 @@ Combines a date column and a time column into one timestamp using the configured
 
 This is used for air-quality observations, where the date and time are supplied in separate GMT columns.
 
+### `format_datetime`
+
+Creates one formatted string column from a date or timestamp column. The source column is preserved.
+
+```json
+{
+   "action": "format_datetime",
+   "parameters": {
+      "source_column": "observation_datetime",
+      "target_column": "observation_date",
+      "format": "yyyy-MM-dd"
+   }
+}
+```
+
+For a timestamp such as `2024-01-15 13:45:00`, the generated `observation_date` value is `2024-01-15`.
+
 ### `cast_columns`
 
 Casts selected columns to the requested Spark data types.

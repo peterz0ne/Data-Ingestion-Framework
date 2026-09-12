@@ -66,6 +66,16 @@ def create_timestamp_from_columns(df, parameters):
         F.to_timestamp(timestamp_text, parameters["format"])
     )
 
+
+def format_datetime(df, parameters):
+    return df.withColumn(
+        parameters["target_column"],
+        F.date_format(
+            F.col(parameters["source_column"]),
+            parameters["format"]
+        )
+    )
+
 def cast_columns(df, parameters):
     for column, data_type in parameters["columns"].items():
         df = df.withColumn(column, F.col(column).cast(data_type))
@@ -104,6 +114,8 @@ def apply_operations(df, operations):
             df = create_hourly_datetime(df, parameters)
         elif action == "create_timestamp_from_columns":
             df = create_timestamp_from_columns(df, parameters)
+        elif action == "format_datetime":
+            df = format_datetime(df, parameters)
         elif action == "cast_columns":
             df = cast_columns(df, parameters)
         elif action == "generate_primary_key":
