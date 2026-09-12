@@ -52,10 +52,8 @@ def gold_transformation(
         col("temp").alias("temp_pu"),
         col("rhum").alias("rhum_pu"),
         col("prcp").alias("prcp_pu"),
-        col("snwd").alias("snwd_pu"),
         col("wdir").alias("wdir_pu"),
         col("wspd").alias("wspd_pu"),
-        col("wpgt").alias("wpgt_pu"),
         col("pres").alias("pres_pu"),
         col("cldc").alias("cldc_pu"),
         col("observation_datetime").alias("observation_datetime_pu"),
@@ -67,10 +65,8 @@ def gold_transformation(
         col("temp").alias("temp_do"),
         col("rhum").alias("rhum_do"),
         col("prcp").alias("prcp_do"),
-        col("snwd").alias("snwd_do"),
         col("wdir").alias("wdir_do"),
         col("wspd").alias("wspd_do"),
-        col("wpgt").alias("wpgt_do"),
         col("pres").alias("pres_do"),
         col("cldc").alias("cldc_do"),
         col("observation_datetime").alias("observation_datetime_do"),
@@ -113,7 +109,6 @@ def gold_transformation(
         F.concat_ws(", ", F.collect_list("Qualifier")).alias("Qualifiers"),
         F.max("parameter_name").alias("parameter_name"), # it is constant between the values
         F.max("units_of_measure").alias("units_of_measure"), # it is constant between the values
-        F.max("Uncertainty").alias("Uncertainty"), # it is constant between the values
         F.max("method_name").alias("method_name"), # it is constant between the values
         F.max("method_type").alias("method_type") # it is constant between the values
     )
@@ -125,7 +120,6 @@ def gold_transformation(
         col("Qualifiers").alias("Qualifiers_pu"),
         col("parameter_name").alias("parameter_name_pu"),
         col("units_of_measure").alias("units_of_measure_pu"),
-        col("Uncertainty").alias("Uncertainty_pu"),
         col("method_name").alias("method_name_pu"),
         col("method_type").alias("method_type_pu")
     )
@@ -136,7 +130,6 @@ def gold_transformation(
         col("Qualifiers").alias("Qualifiers_do"),
         col("parameter_name").alias("parameter_name_do"),
         col("units_of_measure").alias("units_of_measure_do"),
-        col("Uncertainty").alias("Uncertainty_do"),
         col("method_name").alias("method_name_do"),
         col("method_type").alias("method_type_do")
     )

@@ -3,17 +3,13 @@ import json
 import sys
 
 from pyspark.sql import SparkSession
-from operations import apply_operations
-from schema_validations import validate_schema
-from quality import run_quality_checks
 from metadata import (
     create_run_context,
-    write_run_metadata,
 )
 from helpers import *
-from gold_job import gold_job, write_gold
-from silver_job import silver_job,write_silver
-from bronze_job import bronze_job, write_bronze
+from gold_job import gold_job
+from silver_job import silver_job
+from bronze_job import bronze_job
 
 
 def main():
@@ -47,7 +43,7 @@ def main():
 
         # execute the gold job to execute specific
         # aggregations/enrichments upon the silver layer
-        # gold_job(spark)
+        gold_job(spark)
     finally:
         spark.stop()
 
