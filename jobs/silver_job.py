@@ -37,7 +37,7 @@ def silver_job(spark, config, run_context):
     )
 
     # free up unused memory
-    del df
+    del transformed_data
     gc.collect()
 
 
@@ -49,6 +49,10 @@ def read_and_transform_bronze(spark, config):
         config.get("quality_checks", [])
     )
     transformed_data = apply_operations(cleaned_data, config.get("operations", []))
+
+    # free up unused memory
+    del bronze_data
+    del cleaned_data
     return transformed_data, quality_summary
 
 

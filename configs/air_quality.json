@@ -37,7 +37,7 @@
             "inferSchema": false
         }
     },
-    "partitions":["date_local"],
+    "partitions":["local_date"],
     "operations": [
         {
             "action": "drop_columns",
