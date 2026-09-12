@@ -3,10 +3,8 @@ from operations import apply_operations
 from schema_validations import validate_schema
 from helpers import *
 from metadata import *
-from quality import run_quality_checks
+from quality.quality import run_quality_checks
 from metadata import (
-    add_bronze_metadata,
-    create_run_context,
     write_run_metadata,
 )
 import gc
