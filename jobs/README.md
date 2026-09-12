@@ -115,11 +115,11 @@ This makes numeric, date, and timestamp fields usable for analysis instead of le
 
 Adds a generated identifier column.
 
-- `column`: name of the new identifier.
-- `strategy`: `incremental` or `uuid`.
-- `start`: starting value for the incremental strategy.
+- `column`: name of the new identifier column.
+- `strategy`: primary key generation strategy (only `incremental` is supported).
+- `start`: starting value for the incremental strategy (defaults to `1`).
 
-The incremental strategy uses Spark's `monotonically_increasing_id()` plus the configured start value. The UUID strategy creates a UUID for each row. Generated identifiers are added after quality checks, so they are not used to hide duplicate source rows.
+The incremental strategy uses Spark's `monotonically_increasing_id()` plus the configured start value. Generated identifiers are added after quality checks, so they are not used to hide duplicate source rows.
 
 ## Dataset Operations
 
