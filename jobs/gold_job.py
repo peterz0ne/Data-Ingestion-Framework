@@ -8,9 +8,15 @@ import gc
 GOLD_LAYER_DATASET_LOCATION = "s3a://delta-data/gold/gold_"
 
 
-def gold_job(spark):
-    df = gold_transformation(spark)
-    write_gold(df,"integrated_taxi_trips","date")
+def gold_job(
+    spark,
+    dataset="integrated_taxi_trips",
+    partitions="date",
+    gold_location=GOLD_LAYER_DATASET_LOCATION,
+    silver_location=None,
+):
+    df = gold_transformation(spark, silver_location=silver_location)
+    write_gold(df, dataset, partitions, gold_location)
 
     # free up unused memory
     del df
@@ -22,12 +28,14 @@ def gold_transformation(
         taxi_trips_table="taxi_trips",
         taxi_zones_table="taxi_zones",
         air_quality_table="air_quality",
-        weather_table="weather"
+        weather_table="weather",
+        silver_location=None,
     ):
-    taxi_trips = read_silver(spark, taxi_trips_table)
-    taxi_zones = read_silver(spark, taxi_zones_table)
-    air_quality = read_silver(spark, air_quality_table)
-    weather = read_silver(spark, weather_table)
+    read_options = {} if silver_location is None else {"silver_location": silver_location}
+    taxi_trips = read_silver(spark, taxi_trips_table, **read_options)
+    taxi_zones = read_silver(spark, taxi_zones_table, **read_options)
+    air_quality = read_silver(spark, air_quality_table, **read_options)
+    weather = read_silver(spark, weather_table, **read_options)
 
     zones_drop = taxi_zones.withColumnsRenamed({
         "location_id": "dropoff_loc_id",
@@ -157,8 +165,13 @@ def gold_transformation(
     return df
 
 
-def write_gold(df, dataset,partitions):
+def write_gold(
+    df,
+    dataset,
+    partitions,
+    gold_location=GOLD_LAYER_DATASET_LOCATION,
+):
     print("writing gold data")
-    target = f"{GOLD_LAYER_DATASET_LOCATION}{dataset}"
+    target = f"{gold_location}{dataset}"
     df.write.format("delta").partitionBy(partitions).mode("overwrite").save(target)
     print(f"Written gold Delta table to: {target}")

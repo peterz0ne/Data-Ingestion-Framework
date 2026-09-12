@@ -8,7 +8,7 @@ from metadata import (
     write_run_metadata,
 )
 import gc
-from bronze_job import read_bronze
+from bronze_job import BRONZE_LAYER_DATASET_LOCATION, read_bronze
 
 from helpers import *
 
@@ -17,30 +17,46 @@ from helpers import *
 SILVER_LAYER_DATASET_LOCATION = "s3a://delta-data/silver/silver_"
 
 
-def silver_job(spark, config, run_context):
-    transformed_data, quality_summary = read_and_transform_bronze(spark, config)
+def silver_job(
+    spark,
+    config,
+    run_context,
+    bronze_location=BRONZE_LAYER_DATASET_LOCATION,
+    silver_location=SILVER_LAYER_DATASET_LOCATION,
+    write_metadata=True,
+):
+    transformed_data, quality_summary = read_and_transform_bronze(
+        spark,
+        config,
+        bronze_location,
+    )
     processed_rows = quality_summary["processed_rows"]
     rejected_rows = quality_summary["rejected_rows"]
 
-    write_silver(transformed_data, config)
+    write_silver(transformed_data, config, silver_location)
 
-    write_run_metadata(
-        spark,
-        run_context,
-        config["dataset"],
-        config["schema_version"],
-        # [],
-        processed_rows,
-        rejected_rows,
-    )
+    if write_metadata:
+        write_run_metadata(
+            spark,
+            run_context,
+            config["dataset"],
+            config["schema_version"],
+            # [],
+            processed_rows,
+            rejected_rows,
+        )
 
     # free up unused memory
     del transformed_data
     gc.collect()
 
 
-def read_and_transform_bronze(spark, config):
-    bronze_data = read_bronze(spark, config["dataset"])
+def read_and_transform_bronze(
+    spark,
+    config,
+    bronze_location=BRONZE_LAYER_DATASET_LOCATION,
+):
+    bronze_data = read_bronze(spark, config["dataset"], bronze_location)
     validate_schema(bronze_data, config.get("schema"))
     cleaned_data, quality_summary = run_quality_checks(
         bronze_data,
@@ -54,9 +70,13 @@ def read_and_transform_bronze(spark, config):
     return transformed_data, quality_summary
 
 
-def write_silver(df, config):
-    target = f"{SILVER_LAYER_DATASET_LOCATION}{config['dataset']}"
-    if ("partitions" in config.keys() and config["partitions"]):
+def write_silver(
+    df,
+    config,
+    silver_location=SILVER_LAYER_DATASET_LOCATION,
+):
+    target = f"{silver_location}{config['dataset']}"
+    if "partitions" in config and config["partitions"]:
         (
             df.write.format("delta")
             .partitionBy(config["partitions"])
@@ -75,5 +95,9 @@ def write_silver(df, config):
     print(f"Written silver Delta table to: {target}")
 
 
-def read_silver(spark,dataset):
-    return spark.read.format("delta").load(f"{SILVER_LAYER_DATASET_LOCATION}{dataset}")
+def read_silver(
+    spark,
+    dataset,
+    silver_location=SILVER_LAYER_DATASET_LOCATION,
+):
+    return spark.read.format("delta").load(f"{silver_location}{dataset}")

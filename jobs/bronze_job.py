@@ -6,9 +6,14 @@ import gc
 BRONZE_LAYER_DATASET_LOCATION = "s3a://delta-data/bronze/bronze_"
 
 
-def bronze_job(spark, config, run_context):
+def bronze_job(
+    spark,
+    config,
+    run_context,
+    bronze_location=BRONZE_LAYER_DATASET_LOCATION,
+):
     df = read_landing_and_add_metadata(spark, config, run_context)
-    write_bronze(df, config["dataset"])
+    write_bronze(df, config["dataset"], bronze_location)
 
     # free up unused memory
     del df
@@ -25,8 +30,12 @@ def read_landing_and_add_metadata(spark, config, run_context):
     return df
 
 
-def write_bronze(df, dataset):
-    target = f"{BRONZE_LAYER_DATASET_LOCATION}{dataset}"
+def write_bronze(
+    df,
+    dataset,
+    bronze_location=BRONZE_LAYER_DATASET_LOCATION,
+):
+    target = f"{bronze_location}{dataset}"
     (
         df.write
         .format("delta")
@@ -40,8 +49,8 @@ def write_bronze(df, dataset):
     print(f"Written bronze Delta table to: {target}")
 
 
-def read_bronze(spark, dataset):
-    df = spark.read.format("delta").load(f"{BRONZE_LAYER_DATASET_LOCATION}{dataset}")
+def read_bronze(spark, dataset, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
+    df = spark.read.format("delta").load(f"{bronze_location}{dataset}")
     # make sure to not return any metadata when the bronze data are are requested
     # from another job (eg silver layer transformation)
     return rm_bronze_metadata(df)
