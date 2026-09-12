@@ -24,7 +24,7 @@ def silver_transformations(spark,config):
 
 def write_silver(df, config):
     target = f"s3a://delta-data/silver/silver_{config['dataset']}"
-    if("partitions" in config.keys()):
+    if("partitions" in config.keys() and config["partitions"] != []):
         df.write.format("delta").partitionBy(config["partitions"]).mode("overwrite").option("overwriteSchema", "true").save(target)
     else:
         df.write.format("delta").mode("overwrite").option("overwriteSchema", "true").save(target)
