@@ -56,7 +56,6 @@ def handle_validation_failure(
 
     action, failure = get_failure_action(parameters)
 
-    # action: 'warn' should generally be avoided and used only for testing
     if action == "warn":
         print(f"[WARN]: {message} Invalid rows: {invalid_count} (since action='warn' was specified, ignore this)")
         return df # dont fail

@@ -1,9 +1,7 @@
-from pyspark import find_spark_home
 import json
 import sys
 
 from pyspark.sql import SparkSession
-
 
 def get_config_path():
     if len(sys.argv) != 2:
@@ -12,7 +10,6 @@ def get_config_path():
 
     return sys.argv[1]
 
-
 def get_config_paths():
     return [
         "/opt/spark/configs/taxi_zones.json",
@@ -20,7 +17,6 @@ def get_config_paths():
         "/opt/spark/configs/air_quality.json",
         "/opt/spark/configs/weather.json",
     ]
-
 
 def load_config(config_path):
     with open(config_path) as file:
@@ -39,9 +35,3 @@ def read_source(spark, source):
         .options(**source["options"])
         .load(source["paths"])
     )
-
-
-
-
-
-

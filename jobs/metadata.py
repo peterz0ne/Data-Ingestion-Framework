@@ -4,14 +4,12 @@ from uuid import uuid4
 
 from pyspark.sql import functions as F
 
-
 def create_run_context():
     return {
         "run_id": str(uuid4()),
         "started_at": datetime.now(timezone.utc),
         "started_timer": perf_counter(),
     }
-
 
 def add_bronze_metadata(df, run_context):
     return (
@@ -28,7 +26,6 @@ def write_run_metadata(
     run_context,
     dataset,
     schema_version,
-    # source_files,
     processed_rows,
     rejected_rows,
 ):
@@ -44,7 +41,6 @@ def write_run_metadata(
                 run_context["run_id"],
                 dataset,
                 schema_version,
-                # ", ".join(source_files),
                 processed_rows,
                 rejected_rows,
                 run_context["started_at"],
@@ -57,7 +53,6 @@ def write_run_metadata(
             "run_id",
             "dataset",
             "schema_version",
-            # "source_files",
             "processed_rows",
             "rejected_rows",
             "started_at",

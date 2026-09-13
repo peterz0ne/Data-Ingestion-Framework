@@ -2,7 +2,6 @@ import sys
 import re
 
 from pyspark.sql import functions as F
-from pyspark.sql.window import Window
 
 def rename_columns(df, parameters):
     source_columns = parameters["source"]
@@ -21,9 +20,7 @@ def standardize_column_names(df):
     for column in df.columns:
         standardized_name = re.sub(r"[^a-zA-Z0-9]+", "_", column)
         standardized_name = standardized_name.strip("_").lower()
-
         df = df.withColumnRenamed(column, standardized_name)
-
     return df
 
 def drop_columns(df, parameters):

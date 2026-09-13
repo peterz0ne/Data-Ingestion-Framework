@@ -12,10 +12,8 @@ from bronze_job import BRONZE_LAYER_DATASET_LOCATION, read_bronze
 
 from helpers import *
 
-
 # the location prefix of silver layer dataset in the object storage
 SILVER_LAYER_DATASET_LOCATION = "s3a://delta-data/silver/silver_"
-
 
 def silver_job(
     spark,
@@ -41,15 +39,12 @@ def silver_job(
             run_context,
             config["dataset"],
             config["schema_version"],
-            # [],
             processed_rows,
             rejected_rows,
         )
 
-    # free up unused memory
     del transformed_data
     gc.collect()
-
 
 def read_and_transform_bronze(
     spark,
@@ -64,11 +59,9 @@ def read_and_transform_bronze(
     )
     transformed_data = apply_operations(cleaned_data, config.get("operations", []))
 
-    # free up unused memory
     del bronze_data
     del cleaned_data
     return transformed_data, quality_summary
-
 
 def write_silver(
     df,
@@ -81,19 +74,18 @@ def write_silver(
             df.write.format("delta")
             .partitionBy(config["partitions"])
             .mode("overwrite")
-            .option("overwriteSchema", "true") # maybe not needed?
+            .option("overwriteSchema", "true")
             .save(target)
         )
     else:
         (
             df.write.format("delta")
             .mode("overwrite")
-            .option("overwriteSchema", "true") # maybe not needed?
+            .option("overwriteSchema", "true")
             .save(target)
         )
 
     print(f"Written silver Delta table to: {target}")
-
 
 def read_silver(
     spark,

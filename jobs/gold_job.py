@@ -3,10 +3,8 @@ from pyspark.sql.functions import col
 from silver_job import read_silver
 import gc
 
-
 # the location prefix of gold layer dataset in the object storage
 GOLD_LAYER_DATASET_LOCATION = "s3a://delta-data/gold/gold_"
-
 
 def gold_job(
     spark,
@@ -18,7 +16,6 @@ def gold_job(
     df = gold_transformation(spark, silver_location=silver_location)
     write_gold(df, dataset, partitions, gold_location)
 
-    # free up unused memory
     del df
     gc.collect()
 
@@ -41,7 +38,7 @@ def gold_transformation(
         "location_id": "dropoff_loc_id",
         "borough":"dropoff_borough",
         "service_zone": "dropoff_service_zone",
-        "zone": "dropoff_zone_name"  # adjust based on your actual column names
+        "zone": "dropoff_zone_name"
     })
     zones_pick = taxi_zones.withColumnsRenamed({
         "location_id": "pickup_loc_id",
@@ -115,10 +112,10 @@ def gold_transformation(
         F.avg("sample_measurement").alias("average_value"),
         F.avg("MDL").alias("MDL"),
         F.concat_ws(", ", F.collect_list("Qualifier")).alias("Qualifiers"),
-        F.max("parameter_name").alias("parameter_name"), # it is constant between the values
-        F.max("units_of_measure").alias("units_of_measure"), # it is constant between the values
-        F.max("method_name").alias("method_name"), # it is constant between the values
-        F.max("method_type").alias("method_type") # it is constant between the values
+        F.max("parameter_name").alias("parameter_name"),
+        F.max("units_of_measure").alias("units_of_measure"),
+        F.max("method_name").alias("method_name"),
+        F.max("method_type").alias("method_type")
     )
 
     aq_pu = df_aq.select(
