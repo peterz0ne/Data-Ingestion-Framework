@@ -10,15 +10,9 @@
   - Probably UTC timezone
 - Air Quality: https://aqs.epa.gov/aqsweb/airdata/FileFormats.html#_format_5
 - Taxi Zone Lookup:
-  - Look [here](./data/taxi_zone_lookup/Readme.md)
-
-## Published Analysis Example (might be useful)
-- https://medium.com/@mozart38/where-do-people-go-in-nyc-the-recipe-of-an-analysis-a307499013a6
-
-
+  - Look [here](./landing/taxi_zone_lookup/Readme.md)
 
 ## Running with Docker
-
 To setup the environment install docker and run the following command
 ```sh
 docker compose up --build -d
