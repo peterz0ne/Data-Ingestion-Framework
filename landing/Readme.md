@@ -10,7 +10,7 @@ These 4 datasets are:
 ## Taxi trips
 This dataset describes a specific dataset in New York.
 For the schema we used the following:
-https://aqs.epa.gov/aqsweb/airdata/FileFormats.html#_format_5
+https://home4.nyc.gov/assets/tlc/downloads/pdf/data_dictionary_trip_records_yellow.pdf
 
 ## Taxi zones
 This dataset describes a specific taxi zone in New York
@@ -38,7 +38,7 @@ We land the raw data from the different datasources in the bronze layer without 
 
 ## Silver layer
 
-We load the data from the bronze to the silver layer and during we apply a different set of transformations:
+We load the data from the bronze layer, we then apply a different set of transformations and then we create the silver layer:
 - renaming
 - assigning correct datatypes
 - validating the data
@@ -47,12 +47,10 @@ We load the data from the bronze to the silver layer and during we apply a diffe
 
 ## Gold layer
 
-We load the data from the silver to the gold layer and on the way apply transformation to create a presentation ready dataset, which contains all related data to a specific taxi trip.
+We load the data from the silver then we apply the enrichments and aggregations to create a presentation ready dataset for the gold layer. This contains all related data to a specific taxi trip.
 We apply:
 - joining to other tables
-- cleaning the data
-- deriving columns
-- dropping unnecessary columns
+- aggregate
 
 ## Architectural diagram
 
