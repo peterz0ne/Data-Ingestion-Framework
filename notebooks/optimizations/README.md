@@ -92,3 +92,30 @@ Query 5 has no required small-table join, so it is not included in this experime
 - Explain reduced shuffle work, if shown in the plan.
 
 Task 3: normal versus broadcast join, same result, timing, and plans.
+
+## Adaptive Query Execution: Queries 3 and 5
+
+Notebook: `aqe_queries_03_05.ipynb`
+
+### Experiment
+
+- Compare AQE disabled and enabled.
+- Change only `spark.sql.adaptive.enabled`.
+- Keep inputs and SQL unchanged.
+- Use one warm-up and three timed runs; compare medians.
+
+### Evidence to save
+
+- Equal-result check and timing summary.
+- AQE-enabled final plan after executing the query.
+- Plan changes such as coalesced shuffle partitions or a different join strategy.
+
+### Report notes
+
+- AQE uses runtime statistics to re-optimize a plan.
+- Compare the final AQE plan with the non-adaptive plan.
+- Query 3 shows coalesced adaptive shuffle reads.
+- Its one-row cross join stays broadcast in both plans.
+- Report no improvement if Spark makes no useful change for this workload.
+
+Task 3: AQE enabled versus disabled, same result, timing, and final plans.
