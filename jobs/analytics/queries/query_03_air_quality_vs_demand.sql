@@ -1,9 +1,3 @@
--- Query 3: relationship between hourly pickup demand and pickup air quality.
--- Demand is the number of taxi trips beginning in an hour. Air quality is the
--- existing Gold-table hourly New York aggregate joined to the pickup hour.
-
---TODO: maybe instead of adding `observed_hours` and `demand_air_quality_correlation` in every 
---      row of the result, just do it if needed in a later step in a notebook or something?
 WITH hourly_demand AS (
     SELECT
         pu_datetime_hour AS pickup_hour_utc,

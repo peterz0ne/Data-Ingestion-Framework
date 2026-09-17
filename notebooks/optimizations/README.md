@@ -1,0 +1,67 @@
+# Task 3 Optimization Experiments
+
+Each notebook in this directory runs a controlled Task 3 experiment. It keeps
+the query result constant, records the implementation-specific overhead, and
+compares execution time and Spark physical plans.
+
+Run only one notebook Spark session at a time. Finish each notebook by running
+its cleanup cell so its executors and cached data are released.
+
+## Caching: Queries 3 and 5
+
+Notebook: `caching_queries_03_05.ipynb`
+
+### Experiment
+
+- Compare uncached and cached Query 3 and Query 5.
+- Keep SQL and results unchanged.
+- Cache `pickup_datetime`, `pu_datetime_hour`, and `average_value_pu`.
+- Materialize with `count()`; record its cost.
+- Use one warm-up and three timed runs; compare medians.
+- Clear the cache and stop Spark.
+
+The full Gold table exceeded executor memory. The narrow view keeps all needed
+columns and rows.
+
+### Evidence to save
+
+- Timings, medians, and materialization time.
+- Result-check message.
+- Uncached plan: `Scan parquet`.
+- Cached plan: `Scan In-memory table` and `InMemoryRelation`.
+
+### Report notes
+
+- Cache a shared input, not final results.
+- Report medians, speedup, and materialization time.
+- Compare `Scan parquet` with `Scan In-memory table`.
+- Explain that shuffles and aggregation remain.
+- Mention the narrow view and memory limit.
+
+Task 3: caching, timing, same results, and plan comparison.
+
+## Partition Pruning: Queries 3 and 5
+
+Notebook: `partition_pruning_queries_03_5.ipynb`
+
+### Experiment
+
+- Filter both layouts to February 2024.
+- Run the filtered Query 3 and Query 5 variants.
+- Compare date-partitioned Gold with an unpartitioned Delta copy.
+- Keep SQL and results unchanged.
+- Use one warm-up and three timed runs; compare medians.
+
+### Evidence to save
+
+- Equal-result check and timing summary.
+- Partitioned plan: `PartitionFilters` with the February range.
+- Unpartitioned plan: no date `PartitionFilters`.
+
+### Report notes
+
+- Do not compare a filtered query with an all-data query.
+- State that both layouts use the same February filter.
+- Explain that only the partitioned layout can skip January and March.
+
+Task 3: same result, timing comparison, and pruning evidence.

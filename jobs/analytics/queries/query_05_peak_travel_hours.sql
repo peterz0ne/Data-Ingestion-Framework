@@ -1,8 +1,3 @@
--- Query 5: peak pickup hours for each day of the week.
--- Taxi timestamps are stored in UTC. The reportable peak hour is converted to
--- America/New_York so it represents the local time experienced by riders.
-
---TODO: do we agree with this time change to NYC time?
 WITH local_pickups AS (
     SELECT
         from_utc_timestamp(

@@ -10,7 +10,13 @@ INTEGRATED_TABLE_VIEW = "integrated_taxi_trips"
 _QUERY_DIRECTORY = Path(__file__).parent / "queries"
 _QUERY_FILES = {
     "query_03_air_quality_vs_demand": "query_03_air_quality_vs_demand.sql",
+    "query_03_air_quality_vs_demand_february_2024": (
+        "query_03_air_quality_vs_demand_february_2024.sql"
+    ),
     "query_05_peak_travel_hours": "query_05_peak_travel_hours.sql",
+    "query_05_peak_travel_hours_february_2024": (
+        "query_05_peak_travel_hours_february_2024.sql"
+    ),
 }
 
 def available_queries() -> tuple[str, ...]:
@@ -44,4 +50,11 @@ def execute_query(
     table_path: str = DEFAULT_INTEGRATED_TABLE_PATH,
 ) -> DataFrame:
     register_integrated_taxi_trips(spark, table_path)
+    return execute_registered_query(spark, query_name)
+
+
+def execute_registered_query(
+    spark: SparkSession,
+    query_name: str,
+) -> DataFrame:
     return spark.sql(load_query_sql(query_name))
