@@ -65,3 +65,30 @@ Notebook: `partition_pruning_queries_03_5.ipynb`
 - Explain that only the partitioned layout can skip January and March.
 
 Task 3: same result, timing comparison, and pruning evidence.
+
+## Broadcast Join: Query 3 Source Tables
+
+Notebook: `broadcast_join_query_03.ipynb`
+
+Query 5 has no required small-table join, so it is not included in this experiment.
+
+### Experiment
+
+- Join Silver taxi trips with hourly Silver air quality.
+- Compare a normal join with a forced broadcast join.
+- Disable AQE and automatic broadcasting in both versions.
+- Use one warm-up and three timed runs; compare medians.
+
+### Evidence to save
+
+- Equal-result check and timing summary.
+- Normal plan: shuffle join, such as `SortMergeJoin`.
+- Broadcast plan: `BroadcastHashJoin` and `BroadcastExchange`.
+
+### Report notes
+
+- Gold is not used because its joins already happened during ingestion.
+- The air-quality side is small enough to broadcast.
+- Explain reduced shuffle work, if shown in the plan.
+
+Task 3: normal versus broadcast join, same result, timing, and plans.

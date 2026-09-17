@@ -17,6 +17,8 @@ _QUERY_FILES = {
     "query_05_peak_travel_hours_february_2024": (
         "query_05_peak_travel_hours_february_2024.sql"
     ),
+    "broadcast_join_normal": "broadcast_join_normal.sql",
+    "broadcast_join_forced": "broadcast_join_forced.sql",
 }
 
 def available_queries() -> tuple[str, ...]:
