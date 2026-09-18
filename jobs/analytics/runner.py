@@ -13,12 +13,10 @@ _SQL_QUERY_DIRECTORY = Path(__file__).parent / "sql_queries"
 _DATAFRAME_QUERY_DIRECTORY = Path(__file__).parent / "dataframe_queries"
 _DATAFRAME_QUERY_PACKAGE = "analytics.dataframe_queries"
 
-
 def sql_query_names() -> tuple[str, ...]:
     return tuple(
         sorted(query_file.stem for query_file in _SQL_QUERY_DIRECTORY.glob("*.sql"))
     )
-
 
 def dataframe_query_names() -> tuple[str, ...]:
     if not _DATAFRAME_QUERY_DIRECTORY.is_dir():
@@ -31,7 +29,6 @@ def dataframe_query_names() -> tuple[str, ...]:
             if not module.name.startswith("_")
         )
     )
-
 
 def available_queries() -> tuple[str, ...]:
     return sql_query_names() + dataframe_query_names()
