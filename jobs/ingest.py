@@ -9,6 +9,7 @@ from helpers import *
 from gold_job import gold_job
 from silver_job import silver_job
 from bronze_job import bronze_job
+from weather_conditions_job import load_coco_codes
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
         for config_path in config_paths:
             config = load_config(config_path)
             silver_job(spark, config, run_context)
-
+        load_coco_codes(spark)
         gold_job(spark)
     finally:
         spark.stop()
