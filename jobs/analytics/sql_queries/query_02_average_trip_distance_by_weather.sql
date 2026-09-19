@@ -1,17 +1,8 @@
-SELECT
-    AVG(distance) AS average_trip_distance,
-    weather
-FROM (
-    SELECT
-        coco_do AS weather,
-        trip_distance AS distance
-    FROM integrated_taxi_trips
-
-    UNION ALL
-
-    SELECT
-        coco_pu AS weather,
-        trip_distance AS distance
-    FROM integrated_taxi_trips
-) AS weather_observations
-GROUP BY weather
+select /*+ BROADCAST(air_quality) */
+    avg(trip_distance),
+    codes.weather_condition
+from delta.`s3a://delta-data/gold/gold_integrated_taxi_trips` trips 
+    join delta.`s3a://delta-data/silver/silver_weather_conditions` codes 
+    on trips.coco_pu=codes.coco_code
+group by codes.weather_condition
+    order by 1
