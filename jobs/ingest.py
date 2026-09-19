@@ -6,6 +6,7 @@ from metadata import (
     create_run_context,
 )
 from helpers import *
+from analytics.data_products import materialize_all_data_products
 from gold_job import gold_job
 from silver_job import silver_job
 from bronze_job import bronze_job
@@ -30,6 +31,7 @@ def main():
             silver_job(spark, config, run_context)
         load_coco_codes(spark)
         gold_job(spark)
+        materialize_all_data_products(spark)
     finally:
         spark.stop()
 
