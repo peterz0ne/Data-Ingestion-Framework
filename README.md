@@ -21,4 +21,4 @@ To run the pipeline execute the following command:
 docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/ingest.py
 ```
 
-To run the benchmark [notebook](./notebooks/benchmark.ipynb) check this [Readme](./notebooks/Readme.md).
+To run the benchmark [notebook](./notebooks/benchmark.ipynb), see the [Jupyter setup guide](./notebooks/setup/README.md).
