@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 landing/air_quality/hourly_88101_2024.csv
+notebooks/Assign2-dimitris-testing.ipynb
