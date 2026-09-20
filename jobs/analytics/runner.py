@@ -79,6 +79,7 @@ def execute_query(
     table_path: str = DEFAULT_INTEGRATED_TABLE_PATH,
 ) -> DataFrame:
     register_integrated_taxi_trips(spark, table_path)
+    register_weather_conditions(spark)
     return execute_registered_query(spark, query_name)
 
 

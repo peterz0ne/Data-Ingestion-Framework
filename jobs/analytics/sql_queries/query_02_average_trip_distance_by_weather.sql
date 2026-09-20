@@ -1,4 +1,4 @@
-select /*+ BROADCAST(codes) */
+select /*+ BROADCAST(weather_conditions) */
     avg(trip_distance) AS average_trip_distance,
     codes.weather_condition
 from integrated_taxi_trips trips

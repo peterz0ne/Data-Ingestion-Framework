@@ -16,9 +16,15 @@ docker compose up --build -d
 ```
 This will create the containers and start the right away.
 
-To run the pipeline execute the following command (this will generate the gold, silver and bronze tables, as well as the dataproducts):
+* To run the pipeline execute the following command (this will generate the gold, silver and bronze tables, as well as the dataproducts):
 ```sh
 docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/ingest.py
 ```
+* To run the benchmark [notebook](./notebooks/benchmark.ipynb), see the [Jupyter setup guide](./notebooks/setup/README.md).
 
-To run the benchmark [notebook](./notebooks/benchmark.ipynb), see the [Jupyter setup guide](./notebooks/setup/README.md).
+* To run a specific analytical query, run the the specific notbook in `notebooks/run_queries`.
+
+* To recreate the optimization results, run the notebooks in the `notebooks/optimizations` folder
+
+* To measure the sizes of each table, run the notebook: `notebooks/storage_metrics/storage_overhead.ipynb`
+
