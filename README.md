@@ -16,7 +16,7 @@ docker compose up --build -d
 ```
 This will create the containers and start the right away.
 
-To run the pipeline execute the following command:
+To run the pipeline execute the following command (this will generate the gold, silver and bronze tables, as well as the dataproducts):
 ```sh
 docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/ingest.py
 ```
