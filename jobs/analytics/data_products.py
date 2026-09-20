@@ -168,10 +168,13 @@ def materialize_product(
 def materialize_all_data_products(
     spark: SparkSession,
 ) -> None:
+    print("registering taxi trips table...")
     register_integrated_taxi_trips(spark)
+    print("registered taxi trips table")
     refresh_run_id = str(uuid4())
 
     for spec in DATA_PRODUCTS:
         name = spec["name"]
+        print(f"Materializing data product: {name}")
         materialize_product(spark, spec, refresh_run_id)
         print(f"Written data product: {name}")
