@@ -9,7 +9,7 @@ GOLD_LAYER_DATASET_LOCATION = "s3a://delta-data/gold/gold_"
 def gold_job(
     spark,
     dataset="integrated_taxi_trips",
-    partitions="date",
+    partitions="pickup_month",
     gold_location=GOLD_LAYER_DATASET_LOCATION,
     silver_location=None,
 ):
@@ -170,5 +170,5 @@ def write_gold(
 ):
     print("writing gold data")
     target = f"{gold_location}{dataset}"
-    df.write.format("delta").partitionBy(partitions).mode("overwrite").save(target)
+    df.write.format("delta").option("overwriteSchema", "true").partitionBy(partitions).mode("overwrite").save(target)
     print(f"Written gold Delta table to: {target}")
