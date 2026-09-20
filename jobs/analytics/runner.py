@@ -64,6 +64,14 @@ def register_integrated_taxi_trips(
     table.createOrReplaceTempView(INTEGRATED_TABLE_VIEW)
     return table
 
+def register_weather_conditions(
+    spark: SparkSession,
+    table_path: str = "s3a://delta-data/silver/silver_weather_conditions",
+) -> DataFrame:
+    table = spark.read.format("delta").load(table_path)
+    table.createOrReplaceTempView('weather_conditions')
+    return table
+
 
 def execute_query(
     spark: SparkSession,

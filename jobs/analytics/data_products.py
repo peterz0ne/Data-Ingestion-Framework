@@ -9,6 +9,7 @@ from pyspark.sql import DataFrame, SparkSession, functions as F
 from analytics.runner import (
     DEFAULT_INTEGRATED_TABLE_PATH,
     register_integrated_taxi_trips,
+    register_weather_conditions
 )
 
 ANALYTICAL_PRODUCT_LOCATION = "s3a://delta-data/analytics/"
@@ -171,6 +172,9 @@ def materialize_all_data_products(
     print("registering taxi trips table...")
     register_integrated_taxi_trips(spark)
     print("registered taxi trips table")
+    register_weather_conditions(spark)
+    print("registered weather conditions table")
+
     refresh_run_id = str(uuid4())
 
     for spec in DATA_PRODUCTS:
