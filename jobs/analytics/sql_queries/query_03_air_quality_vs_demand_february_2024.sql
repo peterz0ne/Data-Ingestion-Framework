@@ -4,8 +4,7 @@ WITH hourly_demand AS (
         COUNT(*) AS trip_count,
         AVG(average_value_pu) AS avg_air_quality
     FROM integrated_taxi_trips
-    WHERE date >= DATE '2024-02-01'
-      AND date < DATE '2024-03-01'
+    WHERE pickup_month='2024-02'
       AND average_value_pu IS NOT NULL
     GROUP BY pu_datetime_hour
 ),

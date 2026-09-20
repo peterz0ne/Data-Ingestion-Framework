@@ -3,8 +3,7 @@ WITH cd AS (
     FROM integrated_taxi_trips
     where pickup_zone_name <> 'N/A' 
     and pickup_zone_name <> 'Outside of NYC'
-    and date >= DATE '2024-02-01' 
-    AND date < DATE '2024-03-01'
+    and pickup_month='2024-02'
     GROUP BY pickup_zone_name, coco_pu
 )
 select zone, variation from (

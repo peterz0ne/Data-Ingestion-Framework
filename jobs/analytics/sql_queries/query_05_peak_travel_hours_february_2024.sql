@@ -5,8 +5,7 @@ WITH local_pickups AS (
             'America/New_York'
         ) AS pickup_datetime_local
     FROM integrated_taxi_trips
-    WHERE date >= DATE '2024-02-01'
-      AND date < DATE '2024-03-01'
+    WHERE pickup_month='2024-02'
 ),
 hourly_demand AS (
     SELECT
