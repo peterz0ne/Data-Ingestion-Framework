@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .venv/
 landing/air_quality/hourly_88101_2024.csv
+landing/air_quality/air_quality_2025_update.csv
