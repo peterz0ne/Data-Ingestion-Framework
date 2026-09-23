@@ -16,6 +16,7 @@ def silver_job(
     spark,
     config,
     run_context,
+    mode="overwrite",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
     silver_location=SILVER_LAYER_DATASET_LOCATION,
     write_metadata=True,
@@ -37,7 +38,7 @@ def silver_job(
         quality_summary["validation_failure_count"]
     )
 
-    write_silver(transformed_data, config, silver_location)
+    write_silver(transformed_data, config, mode, silver_location)
 
     if write_metadata:
         record_execution(
@@ -57,7 +58,7 @@ def read_and_transform_bronze(
     config,
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
 ):
-    bronze_data = read_bronze(spark, config["dataset"], bronze_location)
+    bronze_data = read_bronze(spark, config["dataset"], bronze_location=bronze_location)
     validate_schema(bronze_data, config.get("schema"))
     cleaned_data, quality_summary = run_quality_checks(
         bronze_data,
@@ -72,6 +73,7 @@ def read_and_transform_bronze(
 def write_silver(
     df,
     config,
+    mode="overwrite",
     silver_location=SILVER_LAYER_DATASET_LOCATION,
 ):
     target = f"{silver_location}{config['dataset']}"
@@ -79,14 +81,16 @@ def write_silver(
         (
             df.write.format("delta")
             .partitionBy(config["partitions"])
-            .mode("overwrite")
+            # .mode("overwrite")
+            .mode(mode)
             .option("overwriteSchema", "true")
             .save(target)
         )
     else:
         (
             df.write.format("delta")
-            .mode("overwrite")
+            # .mode("overwrite")
+            .mode(mode)
             .option("overwriteSchema", "true")
             .save(target)
         )

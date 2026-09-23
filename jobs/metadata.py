@@ -97,3 +97,14 @@ def add_bronze_metadata(df, run_context):
 
 def rm_bronze_metadata(df):
     return df.drop("source_file_path", "ingested_at", "ingestion_run_id")
+
+
+# retrieve and return the latest started_at ingestion
+def get_last_ingestion_run_from_metadata(spark, metadata_location="s3a://delta-data/metadata/ingestion_runs"):
+    return (
+        spark.read
+        .format("delta")
+        .load(metadata_location)
+        .agg(F.max("started_at"))
+        .first()[0]
+    )

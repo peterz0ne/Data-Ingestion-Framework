@@ -14,6 +14,7 @@ def bronze_job(
     spark,
     config,
     run_context,
+    mode="overwrite",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
     write_metadata=True
 ):
@@ -26,7 +27,7 @@ def bronze_job(
     df = read_landing_and_add_metadata(spark, config, run_context)
     processed_records = df.count()
 
-    write_bronze(df, config["dataset"], bronze_location)
+    write_bronze(df, config["dataset"], mode, bronze_location)
 
     if write_metadata:
         record_execution(
@@ -55,13 +56,15 @@ def read_landing_and_add_metadata(spark, config, run_context):
 def write_bronze(
     df,
     dataset,
+    mode="overwrite",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
 ):
     target = f"{bronze_location}{dataset}"
     (
         df.write
         .format("delta")
-        .mode("overwrite")
+        # .mode("overwrite")
+        .mode(mode)
         .option("delta.minReaderVersion", "2")
         .option("delta.minWriterVersion", "5")
         .option("delta.columnMapping.mode", "name")
@@ -71,8 +74,10 @@ def write_bronze(
     print(f"Written bronze Delta table to: {target}")
 
 
-def read_bronze(spark, dataset, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
+def read_bronze(spark, dataset, remove_metadata=True, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
     df = spark.read.format("delta").load(f"{bronze_location}{dataset}")
     # make sure to not return any metadata when the bronze data are requested
     # from another job (eg silver layer transformation)
-    return rm_bronze_metadata(df)
+    if remove_metadata:
+        return rm_bronze_metadata(df)
+    return df
