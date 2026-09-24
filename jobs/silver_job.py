@@ -2,11 +2,8 @@ from pyspark.sql import SparkSession
 from operations import apply_operations
 from schema_validations import validate_schema
 from helpers import *
-from metadata import *
 from quality.quality import run_quality_checks
-from metadata import (
-    write_run_metadata,
-)
+from metadata import record_execution, start_execution
 import gc
 from bronze_job import BRONZE_LAYER_DATASET_LOCATION, read_bronze
 
@@ -23,6 +20,12 @@ def silver_job(
     silver_location=SILVER_LAYER_DATASET_LOCATION,
     write_metadata=True,
 ):
+    execution = start_execution(
+        run_context,
+        stage="silver",
+        dataset=config["dataset"],
+        schema_version=config["schema_version"],
+    )
     transformed_data, quality_summary = read_and_transform_bronze(
         spark,
         config,
@@ -34,13 +37,12 @@ def silver_job(
     write_silver(transformed_data, config, silver_location)
 
     if write_metadata:
-        write_run_metadata(
+        record_execution(
             spark,
-            run_context,
-            config["dataset"],
-            config["schema_version"],
-            processed_rows,
-            rejected_rows,
+            execution,
+            processed_records = processed_rows + rejected_rows,
+            inserted_records = processed_rows,
+            rejected_records = rejected_rows,
         )
 
     del transformed_data

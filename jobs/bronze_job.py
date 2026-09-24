@@ -1,19 +1,42 @@
 from helpers import *
-from metadata import *
+from metadata import (
+    add_bronze_metadata,
+    record_execution,
+    rm_bronze_metadata,
+    start_execution,
+)
 import gc
 
 # the location prefix of bronze layer dataset in the object storage
 BRONZE_LAYER_DATASET_LOCATION = "s3a://delta-data/bronze/bronze_"
-
 
 def bronze_job(
     spark,
     config,
     run_context,
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
+    write_metadata=True
 ):
+    execution = start_execution(
+        run_context,
+        stage="bronze",
+        dataset=config["dataset"],
+        schema_version=config["schema_version"],
+    )
     df = read_landing_and_add_metadata(spark, config, run_context)
+    processed_records = df.count()
+
     write_bronze(df, config["dataset"], bronze_location)
+
+    if write_metadata:
+        record_execution(
+            spark,
+            execution,
+            processed_records=processed_records,
+            inserted_records=processed_records,
+            rejected_records=0,
+            validation_failure_count=0,
+        )
 
     del df
     gc.collect()
