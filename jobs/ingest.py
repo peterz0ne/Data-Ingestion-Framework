@@ -30,8 +30,8 @@ def main():
             config = load_config(config_path)
             silver_job(spark, config, run_context)
         load_coco_codes(spark)
-        gold_job(spark)
-        materialize_all_data_products(spark)
+        gold_job(spark, run_context=run_context)
+        materialize_all_data_products(spark, run_context)
     finally:
         spark.stop()
 

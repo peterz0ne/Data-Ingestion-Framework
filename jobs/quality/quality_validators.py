@@ -9,7 +9,7 @@ from .quality_failure_handling import (
     handle_validation_failure,
 )
 
-def validate_allowed_values(df, parameters):
+def validate_allowed_values(df, parameters, validation_metrics=None):
     column = parameters["column"]
     allowed_values = parameters["allowed_values"]
     invalid_condition = F.col(column).isNotNull() & ~F.col(column).isin(allowed_values)
@@ -20,10 +20,11 @@ def validate_allowed_values(df, parameters):
         invalid_condition,
         parameters,
         f"Validation failed: column '{column}' contains values outside the allowed set: {allowed_values}",
+        validation_metrics=validation_metrics,
     )
 
 
-def validate_non_negative_numbers(df, parameters):
+def validate_non_negative_numbers(df, parameters, validation_metrics=None):
     column = parameters["column"]
     invalid_condition = F.col(column).isNotNull() & (F.col(column) < 0)
 
@@ -32,11 +33,12 @@ def validate_non_negative_numbers(df, parameters):
         column,
         invalid_condition,
         parameters,
-        f"Validation failed: column '{column}' contains negative values."
+        f"Validation failed: column '{column}' contains negative values.",
+        validation_metrics=validation_metrics,
     )
 
 
-def validate_null_values(df, parameters):
+def validate_null_values(df, parameters, validation_metrics=None):
     column = parameters["column"]
     null_values = parameters.get("null_values", [])
     columns = df.columns if column == "*" else [column]
@@ -52,6 +54,7 @@ def validate_null_values(df, parameters):
             invalid_condition,
             parameters,
             f"Validation failed: column '{column_name}' contains null or NaN values.",
+            validation_metrics=validation_metrics,
         )
 
     return df
@@ -69,7 +72,7 @@ def add_duplicate_key_count(df, key_columns):
         F.count("*").over(Window.partitionBy(*key_columns)),
     )
 
-def validate_primary_key(df, parameters):
+def validate_primary_key(df, parameters, validation_metrics=None):
     key_columns = parameters["columns"]
 
     df = handle_validation_failure(
@@ -78,6 +81,7 @@ def validate_primary_key(df, parameters):
         missing_key_condition(key_columns),
         parameters,
         f"Primary key contains missing values: {', '.join(key_columns)}.",
+        validation_metrics=validation_metrics,
     )
 
     df = add_duplicate_key_count(df, key_columns)
@@ -88,6 +92,7 @@ def validate_primary_key(df, parameters):
         F.col("_duplicate_key_count") > 1,
         parameters,
         f"Primary key contains duplicate values: {', '.join(key_columns)}.",
+        validation_metrics=validation_metrics,
     )
 
     return df.drop("_duplicate_key_count")
@@ -125,7 +130,7 @@ def add_duplicate_count_validate_duplicates(
         .withColumn("_duplicate_number", F.row_number().over(duplicate_window))
     )
 
-def validate_duplicates(df, parameters):
+def validate_duplicates(df, parameters, validation_metrics=None):
     columns = parameters["columns"]
     if columns == "*":
         columns = df.columns
@@ -133,8 +138,14 @@ def validate_duplicates(df, parameters):
     failure_action, _ = get_failure_action(parameters)
 
     if failure_action == "drop":
+        deduplicated_df = df.dropDuplicates(columns)
+        duplicate_rows = df.count() - deduplicated_df.count()
+
+        if validation_metrics is not None and duplicate_rows > 0:
+            validation_metrics["validation_failure_count"] += 1
+
         print(f"Deduplicating records using columns: {columns}.")
-        return df.dropDuplicates(columns)
+        return deduplicated_df
 
     df = add_duplicate_count_validate_duplicates(
         df,
@@ -157,6 +168,7 @@ def validate_duplicates(df, parameters):
         parameters,
         f"Validation failed: duplicate records found for columns: {columns}.",
         duplicate_condition & (F.col("_duplicate_number") > 1),
+        validation_metrics=validation_metrics,
     )
 
     return df.drop("_duplicate_count", "_duplicate_number")

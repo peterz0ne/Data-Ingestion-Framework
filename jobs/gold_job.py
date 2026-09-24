@@ -1,6 +1,7 @@
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col
 from silver_job import read_silver
+from metadata import record_execution, start_execution
 import gc
 
 # the location prefix of gold layer dataset in the object storage
@@ -8,13 +9,35 @@ GOLD_LAYER_DATASET_LOCATION = "s3a://delta-data/gold/gold_"
 
 def gold_job(
     spark,
+    run_context,
     dataset="integrated_taxi_trips",
     partitions="pickup_month",
     gold_location=GOLD_LAYER_DATASET_LOCATION,
     silver_location=None,
+    schema_version="1.0",
+    write_metadata=True,
 ):
+    execution = start_execution(
+        run_context,
+        stage="gold",
+        dataset=dataset,
+        schema_version=schema_version,
+    )
+
     df = gold_transformation(spark, silver_location=silver_location)
+    output_records = df.count()
+    
     write_gold(df, dataset, partitions, gold_location)
+
+    if write_metadata:
+        record_execution(
+            spark,
+            execution,
+            processed_records=output_records,
+            inserted_records=output_records,
+            rejected_records=0,
+            validation_failure_count=0,
+        )
 
     del df
     gc.collect()
