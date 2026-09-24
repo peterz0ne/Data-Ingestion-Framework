@@ -99,12 +99,15 @@ def rm_bronze_metadata(df):
     return df.drop("source_file_path", "ingested_at", "ingestion_run_id")
 
 
-# retrieve and return the latest started_at ingestion
-def get_last_ingestion_run_from_metadata(spark, metadata_location="s3a://delta-data/metadata/ingestion_runs"):
-    return (
-        spark.read
-        .format("delta")
-        .load(metadata_location)
-        .agg(F.max("started_at"))
-        .first()[0]
-    )
+# retrieve and return the latest finished_at or started_at execution for the silver stage and dataset from pipeline_executions
+def get_last_silver_run_from_metadata(spark, dataset, metadata_location=PIPELINE_EXECUTIONS_PATH):
+    try:
+        df = spark.read.format("delta").load(metadata_location)
+        row = df.filter((F.col("stage") == "silver") & (F.col("dataset") == dataset)) \
+                .agg(F.max("started_at").alias("max_started")) \
+                .first()
+        if row:
+            return row["max_started"]
+    except Exception as e:
+        print(f"Could not retrieve silver metadata watermark: {e}")
+    return None

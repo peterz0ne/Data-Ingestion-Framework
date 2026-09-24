@@ -9,8 +9,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F, Window
 from metadata import (
     create_run_context,
-    get_last_ingestion_run_from_metadata,
-    rm_bronze_metadata
+    # rm_bronze_metadata
 )
 from schema_validations import validate_schema
 from quality.quality import run_quality_checks
@@ -39,39 +38,9 @@ def main():
 
         for config_path in config_paths:
             config = load_config(config_path)
-            dataset = config["dataset"]
 
-            # retrieve the latest ingestion starting time
-            watermark = get_last_ingestion_run_from_metadata(spark)
-            # 2. Only bronze rows loaded since then
-            bronze = read_bronze(spark, dataset, remove_metadata=False)
-            if watermark is None:
-                new_rows = bronze
-                print("no watermark")
-            else:
-                new_rows = bronze.filter(F.col("ingested_at") >= F.lit(watermark))
-                print(f"NEW ROWS: {new_rows.count()}")
+            silver_job(spark, config, run_context, mode="append", incremental=True)
 
-            if len(new_rows.head(1)) == 0:
-                print("No new bronze rows, silver is up to date.")
-                return
-
-            # make sure to remove the metadata to not get 'invalid schema' errors
-            new_rows = rm_bronze_metadata(new_rows)
-
-            # clean the data here for now in order to avoid
-            # calling silver_job() that reads the whole bronze layer
-            # (we want to do stuff only to the new bronze data)
-
-            # validate/clean/transform new data
-            validate_schema(new_rows, config.get("schema"))
-            cleaned_data, quality_summary = run_quality_checks(
-                new_rows,
-                config.get("quality_checks", [])
-            )
-            transformed_data = apply_operations(cleaned_data, config.get("operations", []))
-
-            write_silver(transformed_data, config, mode="append")
 
     finally:
         spark.stop()
