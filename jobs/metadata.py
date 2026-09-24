@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 from time import perf_counter
 from uuid import uuid4
-from enum import Enum
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
     DoubleType,
@@ -15,10 +14,6 @@ from pyspark.sql.types import (
 PIPELINE_EXECUTIONS_PATH = (
     "s3a://delta-data/metadata/pipeline_executions"
 )
-
-class ExecutionStatus(str, Enum):
-    SUCCESS = "SUCCESS"
-    FAILED = "FAILED"
 
 PIPELINE_EXECUTIONS_SCHEMA = StructType(
     [
@@ -34,8 +29,6 @@ PIPELINE_EXECUTIONS_SCHEMA = StructType(
         StructField("inserted_records", LongType(), nullable=True),
         StructField("rejected_records", LongType(), nullable=True),
         StructField("validation_failure_count", LongType(), nullable=True),
-        StructField("status", StringType(), nullable=False),
-        StructField("error_message", StringType(), nullable=True),
     ]
 )
 
@@ -64,8 +57,6 @@ def record_execution(
     inserted_records=None,
     rejected_records=None,
     validation_failure_count=None,
-    status=ExecutionStatus.SUCCESS,
-    error_message=None,
 ):
     finished_at = datetime.now(timezone.utc)
     duration_seconds = round(
@@ -87,8 +78,6 @@ def record_execution(
             inserted_records,
             rejected_records,
             validation_failure_count,
-            status.value,
-            error_message,
         )
     ]
 
