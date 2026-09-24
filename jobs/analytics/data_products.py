@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from importlib import import_module
 from pathlib import Path
 from uuid import uuid4
-
+from metadata import record_execution, start_execution
 from delta.tables import DeltaTable
 from pyspark.sql import DataFrame, SparkSession, functions as F
 
@@ -136,7 +136,15 @@ def materialize_product(
     spark: SparkSession,
     spec,
     refresh_run_id: str,
+    run_context,
 ) -> None:
+    execution = start_execution(
+        run_context,
+        stage="analytics_refresh",
+        dataset=spec["name"],
+        schema_version=spec["schema_version"],
+    )
+
     refreshed_at = datetime.now(timezone.utc)
     created_at = _existing_created_at(spark, spec["name"], refreshed_at)
     name = spec["name"]
@@ -152,6 +160,8 @@ def materialize_product(
         refresh_run_id,
     )
 
+    product_records = product.count()
+
     (
         product.write.format("delta")
         .mode("overwrite")
@@ -166,8 +176,18 @@ def materialize_product(
         refreshed_at,
     )
 
+    record_execution(
+        spark,
+        execution,
+        processed_records=product_records,
+        inserted_records=product_records,
+        rejected_records=0,
+        validation_failure_count=0,
+    )
+
 def materialize_all_data_products(
     spark: SparkSession,
+    run_context,
 ) -> None:
     print("registering taxi trips table...")
     register_integrated_taxi_trips(spark)
@@ -180,5 +200,5 @@ def materialize_all_data_products(
     for spec in DATA_PRODUCTS:
         name = spec["name"]
         print(f"Materializing data product: {name}")
-        materialize_product(spark, spec, refresh_run_id)
+        materialize_product(spark, spec, refresh_run_id, run_context)
         print(f"Written data product: {name}")
