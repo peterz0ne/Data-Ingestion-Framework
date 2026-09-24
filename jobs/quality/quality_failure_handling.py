@@ -49,10 +49,13 @@ def handle_validation_failure(
     parameters,
     message,
     drop_condition=None,
+    validation_metrics=None,
 ):
     invalid_count = df.filter(invalid_condition).count()
     if invalid_count == 0:
         return df
+    if validation_metrics is not None:
+        validation_metrics["validation_failure_count"] += 1
 
     action, failure = get_failure_action(parameters)
 

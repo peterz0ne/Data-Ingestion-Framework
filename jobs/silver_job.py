@@ -33,6 +33,9 @@ def silver_job(
     )
     processed_rows = quality_summary["processed_rows"]
     rejected_rows = quality_summary["rejected_rows"]
+    validation_failure_count = (
+        quality_summary["validation_failure_count"]
+    )
 
     write_silver(transformed_data, config, silver_location)
 
@@ -43,6 +46,7 @@ def silver_job(
             processed_records = processed_rows + rejected_rows,
             inserted_records = processed_rows,
             rejected_records = rejected_rows,
+            validation_failure_count=validation_failure_count,
         )
 
     del transformed_data

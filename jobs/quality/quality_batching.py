@@ -105,7 +105,7 @@ def count_batch_rule_violations(df, rules):
 
     return df.agg(*aggregations).first().asDict()
 
-def apply_batched_row_checks(df, rules):
+def apply_batched_row_checks(df, rules, validation_metrics=None):
     stats = count_batch_rule_violations(df, rules)
     combined_drop_condition = None
 
@@ -114,6 +114,8 @@ def apply_batched_row_checks(df, rules):
 
         if invalid_count == 0:
             continue
+        if validation_metrics is not None:
+            validation_metrics["validation_failure_count"] += 1
 
         if rule["failure_action"] == "warn":
             print(
