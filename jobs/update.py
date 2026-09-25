@@ -39,7 +39,7 @@ def main():
         for config_path in config_paths:
             config = load_config(config_path)
 
-            silver_job(spark, config, run_context, mode="append", incremental=True)
+            silver_job(spark, config, run_context, incremental=True)
 
 
     finally:

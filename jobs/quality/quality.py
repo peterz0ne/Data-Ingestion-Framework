@@ -64,6 +64,6 @@ def run_quality_checks(df, quality_checks):
     }
 
 def get_checks_that_should_be_rerun_after_append(quality_checks):
-    should_be_rerun = set("validate_primary_key", "validate_duplicates")
+    should_be_rerun = {"validate_primary_key", "validate_duplicates"}
 
-    return [check["action"] for check in quality_checks if check["action"] in should_be_rerun]
+    return [check for check in quality_checks if check["action"] in should_be_rerun]

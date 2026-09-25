@@ -17,7 +17,7 @@ def silver_job(
     spark,
     config,
     run_context,
-    mode="overwrite",
+    # mode="overwrite",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
     silver_location=SILVER_LAYER_DATASET_LOCATION,
     write_metadata=True,
@@ -50,7 +50,7 @@ def silver_job(
 
             transformed_data, quality_summary = run_quality_checks(
                 combined,
-                config.get("quality_checks", [])
+                checks
             )
 
             processed_rows += quality_summary["processed_rows"]
@@ -59,7 +59,7 @@ def silver_job(
 
 
     # re-write the whole silver layer with the combined, cleaned dataset
-    write_silver(transformed_data, config, silver_location, mode="overwrite")
+    write_silver(transformed_data, config, mode="overwrite", silver_location=silver_location)
 
     if write_metadata:
         record_execution(
