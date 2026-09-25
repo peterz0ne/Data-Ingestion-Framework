@@ -1,64 +1,92 @@
 from functools import reduce
 from operator import and_
-
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
+from .validation_results import add_rejection_reason
 
-from .quality_failure_handling import (
-    get_failure_action,
-    handle_validation_failure,
-)
-
-def validate_allowed_values(df, parameters, validation_metrics=None):
+def validate_allowed_values(df, parameters, validation_context=None):
     column = parameters["column"]
     allowed_values = parameters["allowed_values"]
     invalid_condition = F.col(column).isNotNull() & ~F.col(column).isin(allowed_values)
 
-    return handle_validation_failure(
+    return add_rejection_reason(
         df,
-        column,
         invalid_condition,
-        parameters,
-        f"Validation failed: column '{column}' contains values outside the allowed set: {allowed_values}",
-        validation_metrics=validation_metrics,
+        (
+            f"Column '{column}' must contain one of: "
+            f"{allowed_values}."
+        ),
     )
 
+def validate_non_negative_numbers(df, parameters, validation_context=None):
+    columns = parameters["columns"]
+    for column in columns:
+        invalid_condition = F.col(column).isNotNull() & (F.col(column) < 0)
 
-def validate_non_negative_numbers(df, parameters, validation_metrics=None):
-    column = parameters["column"]
-    invalid_condition = F.col(column).isNotNull() & (F.col(column) < 0)
+        df = add_rejection_reason(
+            df,
+            invalid_condition,
+            f"Column '{column}' must be non-negative.",
+        )
 
-    return handle_validation_failure(
-        df,
-        column,
-        invalid_condition,
-        parameters,
-        f"Validation failed: column '{column}' contains negative values.",
-        validation_metrics=validation_metrics,
-    )
+    return df
 
-
-def validate_null_values(df, parameters, validation_metrics=None):
-    column = parameters["column"]
+def validate_null_values(df, parameters, validation_context=None):
     null_values = parameters.get("null_values", [])
-    columns = df.columns if column == "*" else [column]
+    columns = parameters["columns"]
 
     for column_name in columns:
         invalid_condition = F.col(column_name).isNull()
         if null_values:
             invalid_condition = invalid_condition | F.col(column_name).isin(null_values)
 
-        df = handle_validation_failure(
+        df = add_rejection_reason(
             df,
-            column_name,
             invalid_condition,
-            parameters,
-            f"Validation failed: column '{column_name}' contains null or NaN values.",
-            validation_metrics=validation_metrics,
+            f"Column '{column_name}' must not be missing.",
         )
 
     return df
 
+def validate_reference_exists(df, parameters, validation_context=None):
+    reference_dataset = parameters["reference_dataset"]
+    reference_datasets = (validation_context or {}).get("reference_datasets", {})
+
+    if reference_dataset not in reference_datasets:
+        raise ValueError(
+            f"Reference dataset '{reference_dataset}' is not available."
+        )
+
+    column = parameters["column"]
+    reference_column = parameters["reference_column"]
+    reference_df = reference_datasets[reference_dataset]
+
+    reference_values = (
+        reference_df
+        .select(
+            F.col(reference_column).alias("_reference_value")
+        )
+        .filter(F.col(reference_column).isNotNull())
+        .dropDuplicates()
+    )
+
+    df = df.join(
+        reference_values,
+        F.col(column) == F.col("_reference_value"),
+        "left",
+    )
+
+    df = add_rejection_reason(
+        df,
+        F.col(column).isNotNull()
+        & F.col("_reference_value").isNull(),
+        (
+            f"Column '{column}' references a missing record in "
+            f"'{reference_dataset}'."
+        ),
+    )
+
+    return df.drop("_reference_value")
 
 def missing_key_condition(key_columns):
     condition = F.lit(False)
@@ -66,110 +94,88 @@ def missing_key_condition(key_columns):
         condition = condition | F.col(column).isNull()
     return condition
 
-def add_duplicate_key_count(df, key_columns):
-    return df.withColumn(
-        "_duplicate_key_count",
-        F.count("*").over(Window.partitionBy(*key_columns)),
-    )
-
-def validate_primary_key(df, parameters, validation_metrics=None):
+def validate_primary_key(df, parameters, validation_context=None):
     key_columns = parameters["columns"]
 
-    df = handle_validation_failure(
+    df = add_rejection_reason(
         df,
-        None,
         missing_key_condition(key_columns),
-        parameters,
-        f"Primary key contains missing values: {', '.join(key_columns)}.",
-        validation_metrics=validation_metrics,
+        (
+            "Primary key contains missing values: "
+            f"{', '.join(key_columns)}."
+        ),
     )
 
-    df = add_duplicate_key_count(df, key_columns)
-
-    df = handle_validation_failure(
-        df,
-        None,
-        F.col("_duplicate_key_count") > 1,
-        parameters,
-        f"Primary key contains duplicate values: {', '.join(key_columns)}.",
-        validation_metrics=validation_metrics,
+    duplicate_window = (
+        Window
+        .partitionBy(*key_columns)
+        .orderBy(F.monotonically_increasing_id())
+    )
+    df = df.withColumn(
+        "_duplicate_number",
+        F.row_number().over(duplicate_window),
     )
 
-    return df.drop("_duplicate_key_count")
-
-
-def add_duplicate_count_validate_duplicates(
-    df,
-    key_columns,
-    duplicate_column_name,
-):
-    counts = (
-        df.groupBy(*key_columns)
-        .agg(F.count(F.lit(1)).alias(duplicate_column_name))
-    )
-
-    join_condition = reduce(
+    all_key_values_present = reduce(
         and_,
-        [
-            F.col(f"data.{column}").eqNullSafe(F.col(f"keys.{column}"))
-            for column in key_columns
-        ],
+        [F.col(column).isNotNull() for column in key_columns],
     )
 
-    duplicate_window = Window.partitionBy(*key_columns).orderBy(
-        F.monotonically_increasing_id()
+    df = add_rejection_reason(
+        df,
+        all_key_values_present
+        & (F.col("_duplicate_number") > 1),
+        f"Duplicate primary key: {', '.join(key_columns)}.",
     )
 
-    return (
-        df.alias("data")
-        .join(counts.alias("keys"), join_condition, "left")
-        .select(
-            "data.*",
-            F.col(f"keys.{duplicate_column_name}"),
-        )
-        .withColumn("_duplicate_number", F.row_number().over(duplicate_window))
-    )
+    return df.drop("_duplicate_number")
 
-def validate_duplicates(df, parameters, validation_metrics=None):
+def validate_duplicates(df, parameters, validation_context=None):
     columns = parameters["columns"]
+
     if columns == "*":
-        columns = df.columns
+        columns = df.drop("rejection_reasons").columns
 
-    failure_action, _ = get_failure_action(parameters)
-
-    if failure_action == "drop":
-        deduplicated_df = df.dropDuplicates(columns)
-        duplicate_rows = df.count() - deduplicated_df.count()
-
-        if validation_metrics is not None and duplicate_rows > 0:
-            validation_metrics["validation_failure_count"] += 1
-
-        print(f"Deduplicating records using columns: {columns}.")
-        return deduplicated_df
-
-    df = add_duplicate_count_validate_duplicates(
-        df,
-        columns,
-        "_duplicate_count",
+    duplicate_window = (
+        Window
+        .partitionBy(*columns)
+        .orderBy(F.monotonically_increasing_id())
     )
 
-    duplicate_condition = (
-        (F.col("_duplicate_count") > 1)
-        & reduce(
-            and_,
-            [F.col(column).isNotNull() for column in columns],
+    df = df.withColumn(
+        "_duplicate_number",
+        F.row_number().over(duplicate_window),
+    )
+
+    df = add_rejection_reason(
+        df,
+        F.col("_duplicate_number") > 1,
+        f"Duplicate record based on: {', '.join(columns)}.",
+    )
+
+    return df.drop("_duplicate_number")
+
+def validate_numeric_range(
+    df,
+    parameters,
+    validation_context=None,
+):
+    column = parameters["column"]
+    minimum = parameters["minimum"]
+    maximum = parameters["maximum"]
+
+    invalid_condition = (
+        F.col(column).isNotNull()
+        & (
+            (F.col(column) < minimum) | (F.col(column) > maximum)
         )
     )
 
-    df = handle_validation_failure(
+    return add_rejection_reason(
         df,
-        None,
-        duplicate_condition,
-        parameters,
-        f"Validation failed: duplicate records found for columns: {columns}.",
-        duplicate_condition & (F.col("_duplicate_number") > 1),
-        validation_metrics=validation_metrics,
+        invalid_condition,
+        (
+            f"Column '{column}' must be between "
+            f"{minimum} and {maximum}."
+        ),
     )
-
-    return df.drop("_duplicate_count", "_duplicate_number")
-

@@ -1,13 +1,22 @@
-import sys
+def get_schema_validation_errors(df, expected_schema):
+    actual_schema = dict(df.dtypes)
+    errors = []
 
-def validate_schema(df, expected_schema):
-    if expected_schema is not None:
-        actual_schema = dict(df.dtypes)
+    for column, expected_type in expected_schema.items():
+        actual_type = actual_schema.get(column)
 
-        if actual_schema != expected_schema:
-            print("Schema is invalid.")
-            print(f"Expected: {expected_schema}")
-            print(f"Actual:   {actual_schema}")
-            sys.exit(1)
+        if actual_type is None:
+            errors.append(f"Required column '{column}' is missing.")
+        elif actual_type != expected_type:
+            errors.append(
+                (
+                    f"Column '{column}' has type '{actual_type}', "
+                    f"expected '{expected_type}'."
+                )
+            )
 
-        print("Schema is valid.")
+    for column in actual_schema:
+        if column not in expected_schema:
+            errors.append(f"Unsupported new column '{column}'.")
+
+    return errors

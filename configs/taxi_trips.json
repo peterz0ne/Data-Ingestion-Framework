@@ -103,158 +103,84 @@
         {
             "action": "validate_duplicates",
             "parameters": {
-                "columns": "*",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "columns": "*"
             }
         },
         {
             "action": "validate_allowed_values",
             "parameters": {
                 "column": "VendorID",
-                "allowed_values": [1, 2, 6, 7],
-                "on_failure": {
-                    "action": "drop"
-                }
+                "allowed_values": [1, 2, 6, 7]
             }
         },
         {
             "action": "validate_null_values",
             "parameters": {
-                "column": "*",
-                "on_failure": {
-                    "action": "warn"
-                }
+                "columns": [
+                    "VendorID",
+                    "tpep_pickup_datetime",
+                    "tpep_dropoff_datetime",
+                    "PULocationID",
+                    "DOLocationID",
+                    "trip_distance",
+                    "fare_amount",
+                    "total_amount"
+                ]
             }
         },
         {
             "action": "validate_allowed_values",
             "parameters": {
                 "column": "RatecodeID",
-                "allowed_values": [1, 2, 3, 4, 5, 6, 99],
-                "on_failure": {
-                    "action": "drop"
-                }
+                "allowed_values": [1, 2, 3, 4, 5, 6, 99]
             }
         },
         {
             "action": "validate_allowed_values",
             "parameters": {
                 "column": "store_and_fwd_flag",
-                "allowed_values": ["Y", "N"],
-                "on_failure": {
-                    "action": "drop"
-                }
+                "allowed_values": ["Y", "N"]
             }
         },
         {
             "action": "validate_allowed_values",
             "parameters": {
                 "column": "payment_type",
-                "allowed_values": [0, 1, 2, 3, 4, 5, 6],
-                "on_failure": {
-                    "action": "drop"
-                }
+                "allowed_values": [0, 1, 2, 3, 4, 5, 6]
             }
         },
         {
             "action": "validate_non_negative_numbers",
             "parameters": {
-                "column": "passenger_count",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "columns": [
+                    "passenger_count",
+                    "fare_amount",
+                    "extra",
+                    "mta_tax",
+                    "tip_amount",
+                    "tolls_amount",
+                    "improvement_surcharge",
+                    "total_amount",
+                    "congestion_surcharge",
+                    "Airport_fee",
+                    "trip_distance"
+                ]
             }
         },
         {
-            "action": "validate_non_negative_numbers",
+            "action": "validate_reference_exists",
             "parameters": {
-                "column": "fare_amount",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "column": "PULocationID",
+                "reference_dataset": "taxi_zones",
+                "reference_column": "location_id"
             }
         },
         {
-            "action": "validate_non_negative_numbers",
+            "action": "validate_reference_exists",
             "parameters": {
-                "column": "extra",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "mta_tax",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "tip_amount",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "tolls_amount",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "improvement_surcharge",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "total_amount",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "congestion_surcharge",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "Airport_fee",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "trip_distance",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "column": "DOLocationID",
+                "reference_dataset": "taxi_zones",
+                "reference_column": "location_id"
             }
         }
     ]

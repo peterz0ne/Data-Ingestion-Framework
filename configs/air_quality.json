@@ -106,37 +106,17 @@
         {
             "action": "validate_null_values",
             "parameters": {
-                "column": "latitude",
-                "on_failure": {
-                    "action": "warn"
-                }
-            }
-        },
-        {
-            "action": "validate_null_values",
-            "parameters": {
-                "column": "longitude",
-                "on_failure": {
-                    "action": "warn"
-                }
-            }
-        },
-        {
-            "action": "validate_null_values",
-            "parameters": {
-                "column": "Sample Measurement",
-                "on_failure": {
-                    "action": "warn"
-                }
+                "columns": [
+                    "Latitude",
+                    "Longitude",
+                    "Sample Measurement"
+                ]
             }
         },
         {
             "action": "validate_duplicates",
             "parameters": {
-                "columns": "*",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "columns": "*"
             }
         }
     ]
