@@ -50,5 +50,15 @@
                 "null_values": ["N/A"]
             }
         }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "location_id"
+                ]
+            }
+        }
     ]
 }

@@ -151,5 +151,18 @@
                 ]
             }
         }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour"
+                ]
+            }
+        }
     ]
 }

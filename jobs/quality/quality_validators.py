@@ -94,6 +94,14 @@ def missing_key_condition(key_columns):
         condition = condition | F.col(column).isNull()
     return condition
 
+def duplicate_order_columns(df):
+    order_columns = [F.monotonically_increasing_id()]
+
+    if "_is_new_batch" in df.columns:
+        order_columns.insert(0, F.col("_is_new_batch").asc())
+
+    return order_columns
+
 def validate_primary_key(df, parameters, validation_context=None):
     key_columns = parameters["columns"]
 
@@ -109,7 +117,7 @@ def validate_primary_key(df, parameters, validation_context=None):
     duplicate_window = (
         Window
         .partitionBy(*key_columns)
-        .orderBy(F.monotonically_increasing_id())
+        .orderBy(*duplicate_order_columns(df))
     )
     df = df.withColumn(
         "_duplicate_number",
@@ -139,7 +147,7 @@ def validate_duplicates(df, parameters, validation_context=None):
     duplicate_window = (
         Window
         .partitionBy(*columns)
-        .orderBy(F.monotonically_increasing_id())
+        .orderBy(*duplicate_order_columns(df))
     )
 
     df = df.withColumn(

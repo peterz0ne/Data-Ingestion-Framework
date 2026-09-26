@@ -52,7 +52,6 @@ def build_quality_summary(df):
         "validation_failure_count": statistics["validation_failure_count"],
     }
 
-
 def run_quality_checks(df, quality_checks, reference_datasets=None, schema_errors=()):
     reference_datasets = reference_datasets or {}
     df = initialize_rejection_reasons(df, schema_errors)
@@ -75,7 +74,3 @@ def run_quality_checks(df, quality_checks, reference_datasets=None, schema_error
     valid_df, rejected_df = split_valid_and_rejected_records(df)
 
     return valid_df, rejected_df, quality_summary
-
-
-
-

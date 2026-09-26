@@ -180,5 +180,33 @@
                 "reference_column": "location_id"
             }
         }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": [
+                    "vendor_id",
+                    "pickup_datetime",
+                    "dropoff_datetime",
+                    "passenger_count",
+                    "trip_distance",
+                    "rate_code_id",
+                    "store_and_fwd_flag",
+                    "pickup_zone_id",
+                    "dropoff_zone_id",
+                    "payment_type",
+                    "fare_amount",
+                    "extra",
+                    "mta_tax",
+                    "tip_amount",
+                    "tolls_amount",
+                    "improvement_surcharge",
+                    "total_amount",
+                    "congestion_surcharge",
+                    "airport_fee"
+                ]
+            }
+        }
     ]
 }
