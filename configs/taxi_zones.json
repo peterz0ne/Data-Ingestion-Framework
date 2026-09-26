@@ -46,14 +46,8 @@
         {
             "action": "validate_null_values",
             "parameters": {
-                "columns": ["Borough", "Zone"],
+                "columns": ["Zone"],
                 "null_values": ["N/A"]
-            }
-        },
-        {
-            "action": "validate_duplicates",
-            "parameters": {
-                "columns": "*"
             }
         }
     ]

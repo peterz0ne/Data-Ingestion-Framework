@@ -107,8 +107,8 @@
             "action": "validate_null_values",
             "parameters": {
                 "columns": [
-                    "Latitude",
-                    "Longitude",
+                    "Date GMT",
+                    "Time GMT",
                     "Sample Measurement"
                 ]
             }
