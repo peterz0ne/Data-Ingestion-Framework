@@ -17,7 +17,6 @@ def silver_job(
     spark,
     config,
     run_context,
-    # mode="overwrite",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
     silver_location=SILVER_LAYER_DATASET_LOCATION,
     write_metadata=True,
@@ -45,13 +44,36 @@ def silver_job(
         checks = get_checks_that_should_be_rerun_after_append(config.get("quality_checks", []))
 
         if checks:
-            existing_silver = read_silver(spark, config["dataset"])
-            combined = existing_silver.unionByName(transformed_data)
 
-            transformed_data, quality_summary = run_quality_checks(
+            # before unionizing with the existing silver, we mark the data to new and old
+            # in order to append only the new data at the end, instead of overwriting the whole layer
+
+            # 1. tag both dataframes before unioning
+            existing_silver = read_silver(spark, config["dataset"]).withColumn("_is_new_batch", F.lit(False))
+            new_data_marked = transformed_data.withColumn("_is_new_batch", F.lit(True))
+
+            combined = existing_silver.unionByName(new_data_marked, allowMissingColumns=True)
+
+            # 2. run checks on the entire dataset (dropping duplicates, bad rows, etc. in memory)
+            checked_combined, quality_summary = run_quality_checks(
                 combined,
                 checks
             )
+
+            # 3. extract only the new rows that survived the checks
+            transformed_data = (
+                checked_combined
+                .filter(F.col("_is_new_batch") == True)
+                .drop("_is_new_batch")
+            ) # Clean up the marker
+
+            # existing_silver = read_silver(spark, config["dataset"])
+            # combined = existing_silver.unionByName(transformed_data, allowMissingColumns=True)
+
+            # transformed_data, quality_summary = run_quality_checks(
+            #     combined,
+            #     checks
+            # )
 
             processed_rows += quality_summary["processed_rows"]
             rejected_rows += quality_summary["rejected_rows"]
@@ -77,6 +99,7 @@ def silver_job(
 def read_and_transform_bronze(
     spark,
     config,
+    # schema_version="1.0",
     bronze_location=BRONZE_LAYER_DATASET_LOCATION,
     incremental=False, # True if we want to transform only new data
 ):
@@ -86,7 +109,7 @@ def read_and_transform_bronze(
         # we will read the bronze layer and filter it based on the 'ingested_at' column.
         # since spark is lazy, reading the whole table and then doing .filter() is the exact
         # same as just reading only what we need from the delta table
-        bronze_data = read_bronze(spark, dataset, remove_metadata=False, bronze_location=bronze_location)
+        bronze_data = read_bronze(spark, dataset, schema_version=config["schema_version"], remove_metadata=False, bronze_location=bronze_location)
         if watermark is not None:
             print(f"Incremental silver job for {dataset}: filtering bronze data ingested at >= {watermark}")
             bronze_data = bronze_data.filter(F.col("ingested_at") >= F.lit(watermark))
@@ -94,7 +117,15 @@ def read_and_transform_bronze(
             print(f"Incremental silver job for {dataset}: no previous silver run found, processing all bronze data.")
         bronze_data = rm_bronze_metadata(bronze_data)
     else:
-        bronze_data = read_bronze(spark, dataset, remove_metadata=True, bronze_location=bronze_location)
+        bronze_data = read_bronze(spark, dataset, schema_version=config["schema_version"], remove_metadata=True, bronze_location=bronze_location)
+
+    # we need to read only the expected columns, in case the read_bronze call
+    # returned data with multiple schema versions, and the latest version
+    # drops columns, making the merged result (of both schema versions)
+    # still have the dropped column, filled with null values (because the old
+    # version still had the column, and thus the merged result kept it)
+    expected_columns = list(config["schema"].keys())
+    bronze_data = bronze_data.select(*expected_columns)
 
     validate_schema(bronze_data, config.get("schema"))
     cleaned_data, quality_summary = run_quality_checks(

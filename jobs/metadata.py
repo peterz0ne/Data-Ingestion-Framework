@@ -88,15 +88,16 @@ def record_execution(
         .save(PIPELINE_EXECUTIONS_PATH)
     )
 
-def add_bronze_metadata(df, run_context):
+def add_bronze_metadata(df, run_context, config):
     return (
         df.withColumn("source_file_path", F.input_file_name())
         .withColumn("ingested_at", F.lit(run_context["started_at"]))
+        .withColumn("schema_version", F.lit(config["schema_version"]))
         .withColumn("ingestion_run_id", F.lit(run_context["run_id"]))
     )
 
 def rm_bronze_metadata(df):
-    return df.drop("source_file_path", "ingested_at", "ingestion_run_id")
+    return df.drop("source_file_path", "ingested_at", "schema_version", "ingestion_run_id")
 
 
 # retrieve and return the latest finished_at or started_at execution for the silver stage and dataset from pipeline_executions

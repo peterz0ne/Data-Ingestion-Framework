@@ -12,9 +12,9 @@ def get_config_path():
 
 def get_config_paths():
     return [
-        # "/opt/spark/configs/taxi_zones.json",
-        # "/opt/spark/configs/taxi_trips.json",
-        # "/opt/spark/configs/air_quality.json",
+        "/opt/spark/configs/taxi_zones.json",
+        "/opt/spark/configs/taxi_trips.json",
+        "/opt/spark/configs/air_quality.json",
         "/opt/spark/configs/weather.json",
     ]
 

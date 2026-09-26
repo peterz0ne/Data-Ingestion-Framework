@@ -1,3 +1,4 @@
+from pyspark.sql import functions as F
 from helpers import *
 from metadata import (
     add_bronze_metadata,
@@ -49,7 +50,7 @@ def read_landing_and_add_metadata(spark, config, run_context):
     print("Source files:")
     for path in source_files:
         print(f"  {path}")
-    df = add_bronze_metadata(raw_df, run_context)
+    df = add_bronze_metadata(raw_df, run_context, config)
     return df
 
 
@@ -69,13 +70,16 @@ def write_bronze(
         .option("delta.minWriterVersion", "5")
         .option("delta.columnMapping.mode", "name")
         .option("overwriteSchema", "true")
+        .option("mergeSchema", "true")
         .save(target)
     )
     print(f"Written bronze Delta table to: {target}")
 
 
-def read_bronze(spark, dataset, remove_metadata=True, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
+def read_bronze(spark, dataset, schema_version="1.0", remove_metadata=True, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
     df = spark.read.format("delta").load(f"{bronze_location}{dataset}")
+    df.filter(F.col("schema_version") == schema_version)
+
     # make sure to not return any metadata when the bronze data are requested
     # from another job (eg silver layer transformation)
     if remove_metadata:
