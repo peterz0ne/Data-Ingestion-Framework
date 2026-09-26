@@ -64,12 +64,10 @@ def write_bronze(
     (
         df.write
         .format("delta")
-        # .mode("overwrite")
         .mode(mode)
         .option("delta.minReaderVersion", "2")
         .option("delta.minWriterVersion", "5")
         .option("delta.columnMapping.mode", "name")
-        .option("overwriteSchema", "true")
         .option("mergeSchema", "true")
         .save(target)
     )

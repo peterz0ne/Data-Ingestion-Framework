@@ -81,7 +81,7 @@ def silver_job(
 
 
     # re-write the whole silver layer with the combined, cleaned dataset
-    write_silver(transformed_data, config, mode="overwrite", silver_location=silver_location)
+    write_silver(transformed_data, config, mode="append", silver_location=silver_location)
 
     if write_metadata:
         record_execution(
@@ -149,17 +149,15 @@ def write_silver(
         (
             df.write.format("delta")
             .partitionBy(config["partitions"])
-            # .mode("overwrite")
             .mode(mode)
-            .option("overwriteSchema", "true")
+            .option("mergeSchema", "true")
             .save(target)
         )
     else:
         (
             df.write.format("delta")
-            # .mode("overwrite")
             .mode(mode)
-            .option("overwriteSchema", "true")
+            .option("mergeSchema", "true")
             .save(target)
         )
 
