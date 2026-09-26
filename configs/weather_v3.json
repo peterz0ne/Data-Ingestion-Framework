@@ -1,0 +1,184 @@
+{
+    "dataset": "weather",
+    "schema_version": "3.0",
+    "schema": {
+        "year": "int",
+        "month": "int",
+        "day": "int",
+        "hour": "int",
+        "temp": "double",
+        "temp_source": "string",
+        "rhum": "int",
+        "rhum_source": "string",
+        "prcp": "double",
+        "prcp_source": "string",
+        "snwd": "string",
+        "snwd_source": "string",
+        "wdir": "int",
+        "wdir_source": "string",
+        "wspd": "double",
+        "wspd_source": "string",
+        "wpgt": "string",
+        "wpgt_source": "string",
+        "pres": "double",
+        "pres_source": "string",
+        "cldc": "int",
+        "cldc_source": "string",
+        "coco": "int"
+    },
+    "source": {
+        "format": "csv",
+        "paths": [
+            "/opt/spark/landing/weather/weather_dropped_cols.csv"
+        ],
+        "options": {
+            "header": true,
+            "inferSchema": true
+        }
+    },
+    "operations": [
+        {
+            "action": "drop_columns",
+            "parameters": {
+                "columns": [
+                    "snwd",
+                    "snwd_source",
+                    "wpgt",
+                    "wpgt_source"
+                ]
+            }
+        },
+        {
+            "action": "create_hourly_datetime",
+            "parameters": {
+                "year_column": "year",
+                "month_column": "month",
+                "day_column": "day",
+                "hour_column": "hour",
+                "target_column": "observation_datetime"
+            }
+        },
+        {
+            "action": "standardize_column_names",
+            "parameters": {}
+        }
+    ],
+    "quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour"
+                ],
+                "on_failure": {
+                    "action": "fail"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "month",
+                "allowed_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "day",
+                "allowed_values": [
+                    1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                    11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
+                ],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "year",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+                "parameters": {
+                    "column": "hour",
+                    "allowed_values": [
+                        0, 1, 2, 3, 4, 5, 6, 7,
+                        8, 9, 10, 11, 12, 13, 14, 15,
+                        16, 17, 18, 19, 20, 21, 22, 23
+                    ],
+                    "on_failure": {
+                        "action": "drop"
+                    }
+                }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "rhum",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "prcp",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "wdir",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "wspd",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "pres",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "cldc",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        }
+    ]
+}

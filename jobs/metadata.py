@@ -88,12 +88,27 @@ def record_execution(
         .save(PIPELINE_EXECUTIONS_PATH)
     )
 
-def add_bronze_metadata(df, run_context):
+def add_bronze_metadata(df, run_context, config):
     return (
         df.withColumn("source_file_path", F.input_file_name())
         .withColumn("ingested_at", F.lit(run_context["started_at"]))
+        .withColumn("schema_version", F.lit(config["schema_version"]))
         .withColumn("ingestion_run_id", F.lit(run_context["run_id"]))
     )
 
 def rm_bronze_metadata(df):
-    return df.drop("source_file_path", "ingested_at", "ingestion_run_id")
+    return df.drop("source_file_path", "ingested_at", "schema_version", "ingestion_run_id")
+
+
+# retrieve and return the latest finished_at or started_at execution for the silver stage and dataset from pipeline_executions
+def get_last_silver_run_from_metadata(spark, dataset, metadata_location=PIPELINE_EXECUTIONS_PATH):
+    try:
+        df = spark.read.format("delta").load(metadata_location)
+        row = df.filter((F.col("stage") == "silver") & (F.col("dataset") == dataset)) \
+                .agg(F.max("started_at").alias("max_started")) \
+                .first()
+        if row:
+            return row["max_started"]
+    except Exception as e:
+        print(f"Could not retrieve silver metadata watermark: {e}")
+    return None
