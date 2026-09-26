@@ -1,4 +1,3 @@
-from pyarrow import dataset
 from pyspark.sql import functions as F
 from bronze_job import BRONZE_LAYER_DATASET_LOCATION, read_bronze
 from metadata import get_last_silver_run_from_metadata, rm_bronze_metadata
