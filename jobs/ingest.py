@@ -18,6 +18,14 @@ def main():
     spark = create_spark("datasets")
     run_context = create_run_context()
     config_paths = get_config_paths()
+    spark.sql("""
+        CREATE TABLE IF NOT EXISTS pipeline_execution_dependency (
+            execution_id STRING,
+            related_execution_id STRING
+        )
+        USING DELTA
+        LOCATION 's3a://delta-data/metadata/pipeline_execution_dependency'
+    """)
 
     try:
         for config_path in config_paths:

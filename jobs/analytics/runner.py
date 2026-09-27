@@ -64,6 +64,18 @@ def register_integrated_taxi_trips(
     table.createOrReplaceTempView(INTEGRATED_TABLE_VIEW)
     return table
 
+def register_integrated_taxi_trips_with_execution_ids(
+    spark: SparkSession,
+    execution_ids,
+    table_path: str = DEFAULT_INTEGRATED_TABLE_PATH,
+) -> DataFrame:
+    table = spark.read.format("delta").load(table_path)
+    table = table.filter(table.execution_id.isin(execution_ids))
+    # table = table.filter(f"execution_id='{execution_id}'")
+
+    table.createOrReplaceTempView(f"{INTEGRATED_TABLE_VIEW}_ex")
+    return table
+
 def register_weather_conditions(
     spark: SparkSession,
     table_path: str = "s3a://delta-data/silver/silver_weather_conditions",

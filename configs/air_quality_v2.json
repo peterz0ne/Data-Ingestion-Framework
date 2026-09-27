@@ -1,0 +1,157 @@
+{
+    "dataset": "air_quality",
+    "schema_version": "2.0",
+    "schema": {
+        "State Code": "string",
+        "County Code": "string",
+        "Site Num": "string",
+        "Parameter Code": "string",
+        "POC": "string",
+        "Latitude": "string",
+        "Longitude": "string",
+        "Datum": "string",
+        "Parameter Name": "string",
+        "Date Local": "string",
+        "Time Local": "string",
+        "Date GMT": "string",
+        "Time GMT": "string",
+        "Sample Measurement": "string",
+        "Units of Measure": "string",
+        "MDL": "string",
+        "Uncertainty": "string",
+        "Qualifier": "string",
+        "Method Type": "string",
+        "Method Code": "string",
+        "Method Name": "string",
+        "State Name": "string",
+        "County Name": "string",
+        "Date of Last Change": "string",
+        "aqi": "string"
+    },
+    "source": {
+        "format": "csv",
+        "paths": [
+            "/opt/spark/landing/air_quality/air_quality_2025_update.csv"
+        ],
+        "options": {
+            "header": true,
+            "inferSchema": false
+        }
+    },
+    "partitions":["local_date"],
+    "operations": [
+        {
+            "action": "drop_columns",
+            "parameters": {
+                "columns": [
+                    "Uncertainty"
+                ]
+            }
+        },
+        {
+            "action": "rename_columns",
+            "parameters": {
+                "source": [
+                    "Date Local",
+                    "Time Local",
+                    "Date GMT",
+                    "Time GMT",
+                    "Date of Last Change"
+                ],
+                "target": [
+                    "local_date",
+                    "local_time",
+                    "gmt_date",
+                    "gmt_time",
+                    "last_change_date"
+                ]
+            }
+        },
+        {
+            "action": "standardize_column_names",
+            "parameters": {}
+        },
+        {
+            "action": "generate_primary_key",
+            "parameters": {
+                "column": "observation_id",
+                "strategy": "incremental",
+                "start": 1
+            }
+        },
+        {
+            "action": "create_timestamp_from_columns",
+            "parameters": {
+                "date_column": "gmt_date",
+                "time_column": "gmt_time",
+                "target_column": "observation_datetime",
+                "format": "yyyy-MM-dd HH:mm"
+            }
+        },
+        {
+            "action": "cast_columns",
+            "parameters": {
+                "columns": {
+                    "latitude": "double",
+                    "longitude": "double",
+                    "sample_measurement": "double",
+                    "mdl": "double",
+                    "local_date": "date",
+                    "gmt_date": "date",
+                    "last_change_date": "date",
+                    "aqi": "int"
+                }
+            }
+        }
+    ],
+    "quality_checks": [
+        {
+            "action": "validate_null_values",
+            "parameters": {
+                "columns": [
+                    "Date GMT",
+                    "Time GMT",
+                    "Sample Measurement"
+                ]
+            }
+        },
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": "*"
+            }
+        }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": [
+                    "state_code",
+                    "county_code",
+                    "site_num",
+                    "parameter_code",
+                    "poc",
+                    "latitude",
+                    "longitude",
+                    "datum",
+                    "parameter_name",
+                    "local_date",
+                    "local_time",
+                    "gmt_date",
+                    "gmt_time",
+                    "sample_measurement",
+                    "units_of_measure",
+                    "mdl",
+                    "qualifier",
+                    "method_type",
+                    "method_code",
+                    "method_name",
+                    "state_name",
+                    "county_name",
+                    "last_change_date"
+                ]
+            }
+        }
+    ]
+}

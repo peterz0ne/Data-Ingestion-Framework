@@ -2,6 +2,7 @@ import gc
 from bronze_job import BRONZE_LAYER_DATASET_LOCATION
 from metadata import record_execution, start_execution
 from quality.rejected_records import write_rejected_records
+from pyspark.sql import functions as F
 from silver.incremental import validate_incremental_batch_against_silver
 from silver.processing import read_and_transform_bronze
 from silver.storage import SILVER_LAYER_DATASET_LOCATION, read_silver, write_silver
@@ -44,13 +45,14 @@ def silver_job(
 
     # Write only the new valid rows incrementally. Rebuild Silver for full runs.
     if transformed_data is not None:
+        transformed_data = transformed_data.withColumn("execution_id",F.lit(execution["execution_id"]))
         write_silver(
             transformed_data,
             config,
             mode="append" if incremental else "overwrite",
             silver_location=silver_location
         )
-
+    
     if write_metadata:
         record_execution(
             spark,
