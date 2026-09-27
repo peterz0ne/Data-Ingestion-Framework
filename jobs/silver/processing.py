@@ -34,7 +34,7 @@ def read_bronze_for_silver(spark, config, bronze_location, incremental):
     if not incremental:
         return read_bronze(spark, dataset, schema_version=schema_version, remove_metadata=True, bronze_location=bronze_location)
 
-    watermark = get_last_silver_run_from_metadata(spark, dataset, schema_version)
+    watermark = get_last_silver_run_from_metadata(spark, dataset)
     # we will read the bronze layer and filter it based on the 'ingested_at' column.
     # since spark is lazy, reading the whole table and then doing .filter() is the exact
     # same as just reading only what we need from the delta table
