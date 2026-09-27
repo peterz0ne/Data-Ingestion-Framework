@@ -99,14 +99,19 @@ def add_bronze_metadata(df, run_context, config):
 def rm_bronze_metadata(df):
     return df.drop("source_file_path", "ingested_at", "schema_version", "ingestion_run_id")
 
-
-# retrieve and return the latest finished_at or started_at execution for the silver stage and dataset from pipeline_executions
+# Return the latest Silver execution start time for a dataset.
 def get_last_silver_run_from_metadata(spark, dataset, metadata_location=PIPELINE_EXECUTIONS_PATH):
     try:
         df = spark.read.format("delta").load(metadata_location)
-        row = df.filter((F.col("stage") == "silver") & (F.col("dataset") == dataset)) \
-                .agg(F.max("started_at").alias("max_started")) \
-                .first()
+        row = (
+            df
+            .filter(
+                (F.col("stage") == "silver")
+                & (F.col("dataset") == dataset)
+            )
+            .agg(F.max("started_at").alias("max_started"))
+            .first()
+        )
         if row:
             return row["max_started"]
     except Exception as e:

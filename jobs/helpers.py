@@ -23,9 +23,15 @@ def load_config(config_path):
         return json.load(file)
 
 def create_spark(dataset):
-    spark = SparkSession.builder.appName(f"Read-{dataset}").config("spark.executor.memory", "2g").getOrCreate()
+    spark = (
+        SparkSession.builder
+        .appName(f"Read-{dataset}")
+        .config("spark.executor.memory", "2g")
+        .config("spark.sql.maxPlanStringLength", "8192")
+        .getOrCreate()
+    )
     spark.conf.set("spark.sql.session.timeZone", "UTC")
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("ERROR")
     return spark
 
 def read_source(spark, source):

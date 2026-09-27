@@ -106,37 +106,49 @@
         {
             "action": "validate_null_values",
             "parameters": {
-                "column": "latitude",
-                "on_failure": {
-                    "action": "warn"
-                }
-            }
-        },
-        {
-            "action": "validate_null_values",
-            "parameters": {
-                "column": "longitude",
-                "on_failure": {
-                    "action": "warn"
-                }
-            }
-        },
-        {
-            "action": "validate_null_values",
-            "parameters": {
-                "column": "Sample Measurement",
-                "on_failure": {
-                    "action": "warn"
-                }
+                "columns": [
+                    "Date GMT",
+                    "Time GMT",
+                    "Sample Measurement"
+                ]
             }
         },
         {
             "action": "validate_duplicates",
             "parameters": {
-                "columns": "*",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "columns": "*"
+            }
+        }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": [
+                    "state_code",
+                    "county_code",
+                    "site_num",
+                    "parameter_code",
+                    "poc",
+                    "latitude",
+                    "longitude",
+                    "datum",
+                    "parameter_name",
+                    "local_date",
+                    "local_time",
+                    "gmt_date",
+                    "gmt_time",
+                    "sample_measurement",
+                    "units_of_measure",
+                    "mdl",
+                    "qualifier",
+                    "method_type",
+                    "method_code",
+                    "method_name",
+                    "state_name",
+                    "county_name",
+                    "last_change_date"
+                ]
             }
         }
     ]

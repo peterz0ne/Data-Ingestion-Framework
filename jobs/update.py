@@ -6,20 +6,10 @@ import json
 import sys
 
 from pyspark.sql import SparkSession
-from pyspark.sql import functions as F, Window
-from metadata import (
-    create_run_context,
-    # rm_bronze_metadata
-)
-from schema_validations import validate_schema
-from quality.quality import run_quality_checks
-from operations import apply_operations
+from metadata import create_run_context
 from helpers import *
-from analytics.data_products import materialize_all_data_products
-from gold_job import gold_job
-from silver_job import silver_job, write_silver
-from bronze_job import bronze_job, read_bronze
-from weather_conditions_job import load_coco_codes
+from silver_job import silver_job
+from bronze_job import bronze_job
 
 
 def main():

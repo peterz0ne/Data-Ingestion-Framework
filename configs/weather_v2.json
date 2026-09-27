@@ -74,20 +74,14 @@
                     "month",
                     "day",
                     "hour"
-                ],
-                "on_failure": {
-                    "action": "fail"
-                }
+                ]
             }
         },
         {
             "action": "validate_allowed_values",
             "parameters": {
                 "column": "month",
-                "allowed_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                "on_failure": {
-                    "action": "drop"
-                }
+                "allowed_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
             }
         },
         {
@@ -98,88 +92,77 @@
                     1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                     11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
                     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-                ],
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "year",
-                "on_failure": {
-                    "action": "drop"
-                }
+                ]
             }
         },
         {
             "action": "validate_allowed_values",
-                "parameters": {
-                    "column": "hour",
-                    "allowed_values": [
-                        0, 1, 2, 3, 4, 5, 6, 7,
-                        8, 9, 10, 11, 12, 13, 14, 15,
-                        16, 17, 18, 19, 20, 21, 22, 23
-                    ],
-                    "on_failure": {
-                        "action": "drop"
-                    }
-                }
+            "parameters": {
+                "column": "hour",
+                "allowed_values": [
+                    0, 1, 2, 3, 4, 5, 6, 7,
+                    8, 9, 10, 11, 12, 13, 14, 15,
+                    16, 17, 18, 19, 20, 21, 22, 23
+                ]
+            }
         },
         {
             "action": "validate_non_negative_numbers",
+            "parameters": {
+                "columns": [
+                    "year",
+                    "prcp",
+                    "wspd",
+                    "pres"
+                ]
+            }
+        },
+        {
+            "action": "validate_numeric_range",
             "parameters": {
                 "column": "rhum",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "minimum": 0,
+                "maximum": 100
             }
         },
         {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "prcp",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
+            "action": "validate_numeric_range",
             "parameters": {
                 "column": "wdir",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "minimum": 0,
+                "maximum": 360
             }
         },
         {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "wspd",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-
-        {
-            "action": "validate_non_negative_numbers",
-            "parameters": {
-                "column": "pres",
-                "on_failure": {
-                    "action": "drop"
-                }
-            }
-        },
-        {
-            "action": "validate_non_negative_numbers",
+            "action": "validate_numeric_range",
             "parameters": {
                 "column": "cldc",
-                "on_failure": {
-                    "action": "drop"
-                }
+                "minimum": 0,
+                "maximum": 8
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "coco",
+                "allowed_values": [
+                    1, 2, 3, 4, 5, 6, 7, 8, 9,
+                    10, 11, 12, 13, 14, 15, 16, 17, 18,
+                    19, 20, 21, 22, 23, 24, 25, 26, 27
+                ]
+            }
+        }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_primary_key",
+            "parameters": {
+                "columns": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour"
+                ]
             }
         }
     ]

@@ -76,7 +76,7 @@ def write_bronze(
 
 def read_bronze(spark, dataset, schema_version="1.0", remove_metadata=True, bronze_location=BRONZE_LAYER_DATASET_LOCATION):
     df = spark.read.format("delta").load(f"{bronze_location}{dataset}")
-    df.filter(F.col("schema_version") == schema_version)
+    df = df.filter(F.col("schema_version") == schema_version)
 
     # make sure to not return any metadata when the bronze data are requested
     # from another job (eg silver layer transformation)
