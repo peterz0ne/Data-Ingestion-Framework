@@ -31,7 +31,7 @@
     "source": {
         "format": "csv",
         "paths": [
-            "/opt/spark/landing/air_quality/air_quality_2025_update.csv"
+            "/opt/spark/landing/air_quality/yellow_tripdata_2025-01_ext.csv"
         ],
         "options": {
             "header": true,
