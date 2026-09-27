@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from time import perf_counter
+from pyspark.sql import Row
 from uuid import uuid4
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
@@ -49,6 +50,18 @@ def start_execution(run_context, stage, dataset, schema_version):
         "started_at": datetime.now(timezone.utc),
         "started_timer": perf_counter(),
     }
+
+def record_execution_dependency(spark,execution_id,related_execution_id):
+    record = Row(
+        execution_id=execution_id,
+        related_execution_id=related_execution_id
+    )
+    df = spark.createDataFrame([record])
+    df.write \
+        .format("delta") \
+        .mode("append") \
+        .save("s3a://delta-data/metadata/pipeline_execution_dependency")
+
 
 def record_execution(
     spark,

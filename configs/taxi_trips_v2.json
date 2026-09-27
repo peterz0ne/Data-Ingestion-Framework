@@ -1,0 +1,259 @@
+{
+    "dataset": "taxi_trips",
+    "schema_version": "2.0",
+    "schema": {
+        "VendorID": "int",
+        "tpep_pickup_datetime": "timestamp_ntz",
+        "tpep_dropoff_datetime": "timestamp_ntz",
+        "passenger_count": "bigint",
+        "trip_distance": "double",
+        "RatecodeID": "bigint",
+        "store_and_fwd_flag": "string",
+        "PULocationID": "int",
+        "DOLocationID": "int",
+        "payment_type": "bigint",
+        "fare_amount": "double",
+        "extra": "double",
+        "mta_tax": "double",
+        "tip_amount": "double",
+        "tolls_amount": "double",
+        "improvement_surcharge": "double",
+        "total_amount": "double",
+        "congestion_surcharge": "double",
+        "Airport_fee": "double"
+    },
+    "source": {
+        "format": "parquet",
+        "paths": [
+            "/opt/spark/landing/taxi/yellow_tripdata_2025-01_ext.parquet"
+        ],
+        "options": {}
+    },
+    "partitions":["pickup_date"],
+    "operations": [
+        {
+            "action": "rename_columns",
+            "parameters": {
+                "source": [
+                    "VendorID",
+                    "tpep_pickup_datetime",
+                    "tpep_dropoff_datetime",
+                    "RatecodeID",
+                    "PULocationID",
+                    "DOLocationID",
+                    "Airport_fee"
+                ],
+                "target": [
+                    "vendor_id",
+                    "pickup_datetime",
+                    "dropoff_datetime",
+                    "rate_code_id",
+                    "pickup_zone_id",
+                    "dropoff_zone_id",
+                    "airport_fee"
+                ]
+            }
+        },
+        {
+            "action": "format_datetime",
+            "parameters": {
+                "source_column": "pickup_datetime",
+                "target_column": "pickup_date",
+                "format": "yyyy-MM-dd"
+            }
+        },
+        {
+            "action": "format_datetime",
+            "parameters": {
+                "source_column": "dropoff_datetime",
+                "target_column": "dropoff_date",
+                "format": "yyyy-MM-dd"
+            }
+        },
+        {
+            "action": "format_datetime",
+            "parameters": {
+                "source_column": "pickup_datetime",
+                "target_column": "pickup_month",
+                "format": "yyyy-MM"
+            }
+        },
+        {
+            "action": "generate_primary_key",
+            "parameters": {
+                "column": "trip_id",
+                "strategy": "incremental",
+                "start": 1
+            }
+        },
+        {
+            "action": "convert_to_utc",
+            "parameters": {
+                "columns": [
+                    "pickup_datetime",
+                    "dropoff_datetime"
+                ],
+                "source_timezone": "America/New_York"
+            }
+        }
+    ],
+    "quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": "*",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "VendorID",
+                "allowed_values": [1, 2, 6, 7],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_null_values",
+            "parameters": {
+                "column": "*",
+                "on_failure": {
+                    "action": "warn"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "RatecodeID",
+                "allowed_values": [1, 2, 3, 4, 5, 6, 99],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "store_and_fwd_flag",
+                "allowed_values": ["Y", "N"],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_allowed_values",
+            "parameters": {
+                "column": "payment_type",
+                "allowed_values": [0, 1, 2, 3, 4, 5, 6],
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "passenger_count",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "fare_amount",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "extra",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "mta_tax",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "tip_amount",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "tolls_amount",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "improvement_surcharge",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "total_amount",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "congestion_surcharge",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "Airport_fee",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        },
+        {
+            "action": "validate_non_negative_numbers",
+            "parameters": {
+                "column": "trip_distance",
+                "on_failure": {
+                    "action": "drop"
+                }
+            }
+        }
+    ]
+}

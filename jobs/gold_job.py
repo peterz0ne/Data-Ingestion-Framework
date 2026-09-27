@@ -1,7 +1,7 @@
 from pyspark.sql import functions as F
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, lit
 from silver_job import read_silver
-from metadata import record_execution, start_execution
+from metadata import record_execution, start_execution,record_execution_dependency
 import gc
 
 # the location prefix of gold layer dataset in the object storage
@@ -16,6 +16,7 @@ def gold_job(
     silver_location=None,
     schema_version="1.0",
     write_metadata=True,
+    incremental = False
 ):
     execution = start_execution(
         run_context,
@@ -24,11 +25,17 @@ def gold_job(
         schema_version=schema_version,
     )
 
-    df = gold_transformation(spark, silver_location=silver_location)
+    df,exec_ids = gold_transformation(spark, silver_location=silver_location,incremental=incremental)
+    df = df.withColumn("execution_id",lit(execution["execution_id"]))
     output_records = df.count()
-    
-    write_gold(df, dataset, partitions, gold_location)
+    if incremental:
+        append_gold(df, dataset, partitions, gold_location)
+    else:
+        write_gold(df, dataset, partitions, gold_location)
 
+
+    for i in exec_ids:
+        record_execution_dependency(spark,execution["execution_id"],i)
     if write_metadata:
         record_execution(
             spark,
@@ -50,12 +57,27 @@ def gold_transformation(
         air_quality_table="air_quality",
         weather_table="weather",
         silver_location=None,
+        incremental=False,
     ):
     read_options = {} if silver_location is None else {"silver_location": silver_location}
     taxi_trips = read_silver(spark, taxi_trips_table, **read_options)
     taxi_zones = read_silver(spark, taxi_zones_table, **read_options)
     air_quality = read_silver(spark, air_quality_table, **read_options)
     weather = read_silver(spark, weather_table, **read_options)
+
+    if incremental:
+        processed_ids = [row["related_execution_id"] for row in spark.sql(f"""
+            select distinct related_execution_id from delta.`s3a://delta-data/metadata/pipeline_execution_dependency`""").collect()]
+        taxi_trips = taxi_trips.filter(~taxi_trips.execution_id.isin(processed_ids))
+
+
+    exec_ids = set()
+    for df in [taxi_trips,taxi_zones,air_quality,weather]:
+        exec_ids.update(
+            row[0]
+            for row in df.select("execution_id").distinct().collect()
+        )
+
 
     zones_drop = taxi_zones.withColumnsRenamed({
         "location_id": "dropoff_loc_id",
@@ -175,14 +197,14 @@ def gold_transformation(
         "left"
     )
 
-    df = df.drop("observation_datetime_pu", "observation_datetime_do")
+    df = df.drop("observation_datetime_pu", "observation_datetime_do","execution_id")
 
     df = df.withColumn(
         "date",
         F.to_date("pickup_datetime")
     )
 
-    return df
+    return df, list(exec_ids)
 
 
 def write_gold(
@@ -195,3 +217,14 @@ def write_gold(
     target = f"{gold_location}{dataset}"
     df.write.format("delta").option("overwriteSchema", "true").partitionBy(partitions).mode("overwrite").save(target)
     print(f"Written gold Delta table to: {target}")
+
+def append_gold(
+    df,
+    dataset,
+    partitions,
+    gold_location=GOLD_LAYER_DATASET_LOCATION,
+):
+    print("Appending gold data")
+    target = f"{gold_location}{dataset}"
+    df.write.format("delta").option("overwriteSchema", "true").partitionBy(partitions).mode("append").save(target)
+    print(f"Appended gold Delta table to: {target}")

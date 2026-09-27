@@ -80,8 +80,12 @@ def silver_job(
             validation_failure_count += quality_summary["validation_failure_count"]
 
 
-    # re-write the whole silver layer with the combined, cleaned dataset
-    write_silver(transformed_data, config, mode="append", silver_location=silver_location)
+        # re-write the whole silver layer with the combined, cleaned dataset
+        transformed_data = transformed_data.withColumn("execution_id",F.lit(execution["execution_id"]))
+        write_silver(transformed_data, config, mode="append", silver_location=silver_location)
+    else:
+        transformed_data = transformed_data.withColumn("execution_id",F.lit(execution["execution_id"]))
+        write_silver(transformed_data, config, mode="overwrite", silver_location=silver_location)
 
     if write_metadata:
         record_execution(
