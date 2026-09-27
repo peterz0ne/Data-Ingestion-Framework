@@ -28,3 +28,42 @@ docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-mast
 
 * To measure the sizes of each table, run the notebook: `notebooks/storage_metrics/storage_overhead.ipynb`
 
+## Incremental Updates and Schema Evolution
+
+First run the complete baseline pipeline:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  /opt/spark/jobs/ingest.py
+```
+
+Before running the update pipeline, download `yellow_tripdata_2025-01.parquet` from the [NYC TLC Trip Record Data page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) and place it in `landing/taxi/`.
+
+Then run the three notebooks in [data_generation](./data_generation/) to create the incremental input files:
+
+- `data_generation/taxi_trips/generate_taxi_trips.ipynb`
+- `data_generation/air_quality/air_quality.ipynb`
+- `data_generation/weather/weather.ipynb`
+
+They generate the extended Taxi Trips, Air Quality, and Weather files in their configured `landing/` paths.
+
+Now run the update pipeline with:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit \
+  --master spark://spark-master:7077 \
+  /opt/spark/jobs/update.py
+```
+
+The update pipeline appends new Bronze records and processes only records ingested since the latest Silver watermark. Schema versions are configured in `configs/`; each Silver execution processes the matching Bronze `schema_version`. The supplied update configurations demonstrate schema evolution through the new `aqi` Air Quality field and `humidity` Weather field.
+
+## Monitoring and Validation Reports
+
+Pipeline execution metrics are stored in the Delta table at `metadata/pipeline_executions`. Run [inspect_pipeline_monitoring.ipynb](./notebooks/monitoring/inspect_pipeline_monitoring.ipynb) to inspect execution duration, processed and rejected records, validation failures, and dataset-level trends.
+
+Invalid records are written to the Delta quarantine table at `metadata/rejected_records`. Run [inspect_rejected_records.ipynb](./notebooks/monitoring/inspect_rejected_records.ipynb) to inspect rejected source records and their rejection reasons. Quarantined records never reach Silver, Gold, or analytical products.
+
+## Reproducing Evaluation Experiments
+
+Run the notebooks in [notebooks/update_evaluation](./notebooks/update_evaluation).
