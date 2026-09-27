@@ -2,14 +2,16 @@ from datetime import datetime, timezone
 from importlib import import_module
 from pathlib import Path
 from uuid import uuid4
-from metadata import record_execution, start_execution
+from metadata import record_execution, start_execution,record_execution_dependency
 from delta.tables import DeltaTable
 from pyspark.sql import DataFrame, SparkSession, functions as F
 
 from analytics.runner import (
     DEFAULT_INTEGRATED_TABLE_PATH,
+    INTEGRATED_TABLE_VIEW,
     register_integrated_taxi_trips,
-    register_weather_conditions
+    register_weather_conditions,
+    register_integrated_taxi_trips_with_execution_ids
 )
 
 ANALYTICAL_PRODUCT_LOCATION = "s3a://delta-data/analytics/"
@@ -17,26 +19,57 @@ ANALYTICAL_PRODUCT_METADATA_PATH = (
     "s3a://delta-data/metadata/analytical_product_refreshes"
 )
 
+# DATA_PRODUCTS = (
+#     {
+#         "name": "monthly_zone_demand",
+#         "query_source": "analytics.dataframe_queries.query_01_monthly_zone_demand",
+#         "schema_version": "1.0",
+#     },
+#     {
+#         "name": "average_trip_distance_by_weather",
+#         "query_source": "query_02_average_trip_distance_by_weather.sql",
+#         "schema_version": "1.0",
+#     },
+#     {
+#         "name": "air_quality_vs_demand",
+#         "query_source": "query_03_air_quality_vs_demand.sql",
+#         "schema_version": "1.0",
+#     },
+#     {
+#         "name": "zone_weather_demand_variation",
+#         "query_source": "query_04_zone_weather_demand_variation.sql",
+#         "schema_version": "1.0",
+#     },
+# )
+
 DATA_PRODUCTS = (
     {
         "name": "monthly_zone_demand",
         "query_source": "analytics.dataframe_queries.query_01_monthly_zone_demand",
-        "schema_version": "1.0",
+        "recompute_mode":"incremental",
+        "merge_columns":["pickup_month","pickup_zone_name"],
+        "schema_version": "1.1",
     },
     {
         "name": "average_trip_distance_by_weather",
         "query_source": "query_02_average_trip_distance_by_weather.sql",
-        "schema_version": "1.0",
+        "recompute_mode":"full",
+        "merge_columns":["weather_condition"],
+        "schema_version": "1.1",
     },
     {
         "name": "air_quality_vs_demand",
         "query_source": "query_03_air_quality_vs_demand.sql",
-        "schema_version": "1.0",
+        "recompute_mode":"incremental",
+        "merge_columns":["pickup_hour_utc"],
+        "schema_version": "1.1",
     },
     {
         "name": "zone_weather_demand_variation",
         "query_source": "query_04_zone_weather_demand_variation.sql",
-        "schema_version": "1.0",
+        "recompute_mode":"full",
+        "merge_columns":["zone"],
+        "schema_version": "1.1",
     },
 )
 
@@ -56,6 +89,23 @@ def build_product_dataframe(
 
     module = import_module(spec["query_source"])
     return module.build_query(spark)
+
+
+def rebuild_product_dataframe(
+    spark: SparkSession,
+    spec,
+) -> DataFrame:
+    if spec["query_source"].endswith(".sql"):
+        sql_txt= load_product_sql(spec)
+        if spec["recompute_mode"]=="incremental":
+            sql_txt= sql_txt.replace(INTEGRATED_TABLE_VIEW,f"{INTEGRATED_TABLE_VIEW}_ex")
+        return spark.sql(sql_txt)
+    
+    module = import_module(spec["query_source"])
+    if spec["recompute_mode"]=="incremental":
+        return module.build_query(spark,f"{INTEGRATED_TABLE_VIEW}_ex")
+    else:
+        return module.build_query(spark)
 
 def _metadata_table_exists(spark: SparkSession) -> bool:
     return DeltaTable.isDeltaTable(spark, ANALYTICAL_PRODUCT_METADATA_PATH)
@@ -175,7 +225,87 @@ def materialize_product(
         created_at,
         refreshed_at,
     )
+    for i in get_missing_execution_ids_for_table(spark,name):
+            record_execution_dependency(spark,execution["execution_id"],i)
+    record_execution(
+        spark,
+        execution,
+        processed_records=product_records,
+        inserted_records=product_records,
+        rejected_records=0,
+        validation_failure_count=0,
+    )
 
+def rematerialize_product(
+    spark: SparkSession,
+    spec,
+    refresh_run_id: str,
+    run_context,
+) -> None:
+    execution = start_execution(
+        run_context,
+        stage="analytics_refresh",
+        dataset=spec["name"],
+        schema_version=spec["schema_version"],
+    )
+
+    refreshed_at = datetime.now(timezone.utc)
+    created_at = _existing_created_at(spark, spec["name"], refreshed_at)
+    name = spec["name"]
+    product_path = f"{ANALYTICAL_PRODUCT_LOCATION.rstrip('/')}/{name}"
+
+    query_result = rebuild_product_dataframe(spark, spec)
+
+    product = _add_product_metadata(
+        query_result,
+        spec,
+        created_at,
+        refreshed_at,
+        refresh_run_id,
+    )
+
+    product_records = product.count()
+
+    target = DeltaTable.forPath(spark, product_path)
+
+    
+    if spec["recompute_mode"]=="incremental":
+        (
+            product.write.format("delta")
+            .mode("append")
+            .option("overwriteSchema", "true")
+            .save(product_path)
+        )
+        # target.alias("t").merge(
+        #     product_records.alias("s"),
+        #     " and ".join([f"s.{i} == t.{i}" for i in spec["merge_columns"]])
+        # ).whenMatchedUpdateAll(condition= " OR ".join(f"t.{c} <> s.{c}" for c in target.columns)) \
+        # .whenNotMatchedInsertAll() \
+        # .execute()
+    else:
+        target.alias("t").merge(
+            product.alias("s"),
+            " and ".join([f"s.{i} == t.{i}" for i in spec["merge_columns"]])
+        ).whenMatchedUpdateAll(condition= " OR ".join(f"t.{c} <> s.{c}" for c in target.toDF().columns if c != "execution_id")) \
+        .whenNotMatchedInsertAll() \
+        .whenNotMatchedBySourceDelete() \
+        .execute()
+
+    # (
+    #     product.write.format("delta")
+    #     .mode("overwrite")
+    #     .option("overwriteSchema", "true")
+    #     .save(product_path)
+    # )
+
+    _write_refresh_metadata(
+        spark,
+        spec,
+        created_at,
+        refreshed_at,
+    )
+    for i in get_missing_execution_ids_for_table(spark,name):
+        record_execution_dependency(spark,execution["execution_id"],i)
     record_execution(
         spark,
         execution,
@@ -187,7 +317,7 @@ def materialize_product(
 
 def materialize_all_data_products(
     spark: SparkSession,
-    run_context,
+    run_context
 ) -> None:
     print("registering taxi trips table...")
     register_integrated_taxi_trips(spark)
@@ -199,6 +329,40 @@ def materialize_all_data_products(
 
     for spec in DATA_PRODUCTS:
         name = spec["name"]
+
         print(f"Materializing data product: {name}")
         materialize_product(spark, spec, refresh_run_id, run_context)
+        print(f"Written data product: {name}")
+
+
+def get_missing_execution_ids_for_table(spark,table):
+    unprocessed_ids = [row["execution_id"] for row in spark.sql(f"""
+                   select execution_id from 
+        delta.`s3a://delta-data/metadata/pipeline_executions` 
+        where stage = 'gold'
+        and execution_id not in (select distinct related_execution_id from delta.`s3a://delta-data/metadata/pipeline_execution_dependency` d
+            join delta.`s3a://delta-data/metadata/pipeline_executions` e on d.execution_id=e.execution_id and e.dataset='{table}')
+                    """).collect()]
+    return unprocessed_ids
+
+def materialize_new_data_products(
+    spark: SparkSession,
+    run_context
+) -> None:
+    print("registering taxi trips table...")
+    register_integrated_taxi_trips(spark)
+    print("registered taxi trips table with specific records")
+    register_integrated_taxi_trips_with_execution_ids(spark,get_missing_execution_ids_for_table(spark,DATA_PRODUCTS[0]['name']))
+    print("registered taxi trips table")
+    register_weather_conditions(spark)
+    print("registered weather conditions table")
+
+    refresh_run_id = str(uuid4())
+
+    for spec in DATA_PRODUCTS:
+        name = spec["name"]
+        print(f"Materializing data product: {name}")
+        print("registering taxi trips table...")
+        rematerialize_product(spark, spec, refresh_run_id,run_context)
+        
         print(f"Written data product: {name}")

@@ -28,6 +28,7 @@ def bronze_job(
     df = read_landing_and_add_metadata(spark, config, run_context)
     processed_records = df.count()
 
+    df = df.withColumn("execution_id",F.lit(execution["execution_id"]))
     write_bronze(df, config["dataset"], mode, bronze_location)
 
     if write_metadata:

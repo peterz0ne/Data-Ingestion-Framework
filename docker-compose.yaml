@@ -21,10 +21,12 @@ services:
       - spark-network
 
     restart: unless-stopped
+
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
       - ./landing:/opt/spark/landing
+
     deploy:
       resources:
         limits:
@@ -58,6 +60,7 @@ services:
       - spark-network
 
     restart: unless-stopped
+
     volumes:
       - ./jobs:/opt/spark/jobs
       - ./configs:/opt/spark/configs
@@ -108,14 +111,20 @@ services:
       - ./landing:/opt/spark/landing
 
 
+  # --------------------------------------------------
+  # MINIO
+  # --------------------------------------------------
+
   minio:
-    image: quay.io/minio/minio:latest
+    image: openvidu/minio:RELEASE.2026-07-17T12-07-51Z
     container_name: minio
     hostname: minio
 
-    command: >
-      server /data
-      --console-address ":9001"
+    command:
+      - server
+      - /bitnami/minio/data
+      - --console-address
+      - ":9001"
 
     environment:
       MINIO_ROOT_USER: minio
@@ -126,12 +135,17 @@ services:
       - "9001:9001"
 
     volumes:
-      - minio-data:/data
+      - minio-data:/bitnami/minio/data
 
     networks:
       - spark-network
 
     restart: unless-stopped
+
+
+  # --------------------------------------------------
+  # JUPYTER
+  # --------------------------------------------------
 
   jupyter:
     build:
@@ -145,15 +159,16 @@ services:
       jupyter lab
       --ip=0.0.0.0
       --port=8888
-      --no-browser    
+      --no-browser
       --ServerApp.token=''
       --ServerApp.password=''
       --ServerApp.disable_check_xsrf=True
-      
+
     depends_on:
       - spark-master
       - spark-worker-1
       - spark-worker-2
+      - minio
 
     ports:
       - "8888:8888"
@@ -188,25 +203,29 @@ services:
           memory: 4G
 
 
-
+  # --------------------------------------------------
+  # MINIO INITIALIZATION
+  # --------------------------------------------------
 
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: openvidu/minio:RELEASE.2026-07-17T12-07-51Z
     container_name: minio-init
 
     depends_on:
       - minio
 
-    entrypoint: >
-      /bin/sh -c "
-      until mc alias set local http://minio:9000 minio minio123456; do
-        echo 'Waiting for MinIO...';
-        sleep 2;
-      done;
-      mc mb --ignore-existing local/delta-data;
-      mc anonymous set private local/delta-data;
-      echo 'MinIO bucket ready';
-      "
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 minio minio123456; do
+          echo "Waiting for MinIO..."
+          sleep 2
+        done
+
+        mc mb --ignore-existing local/delta-data
+
+        echo "MinIO bucket ready"
 
     networks:
       - spark-network
