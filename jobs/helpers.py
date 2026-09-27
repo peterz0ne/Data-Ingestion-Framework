@@ -18,6 +18,13 @@ def get_config_paths():
         "/opt/spark/configs/weather.json",
     ]
 
+def get_update_config_paths():
+    return [
+        "/opt/spark/configs/taxi_trips_v2.json",
+        "/opt/spark/configs/air_quality_v2.json",
+        "/opt/spark/configs/weather_v2.json",
+    ]
+
 def load_config(config_path):
     with open(config_path) as file:
         return json.load(file)

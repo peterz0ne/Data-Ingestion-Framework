@@ -31,7 +31,7 @@
     "source": {
         "format": "csv",
         "paths": [
-            "/opt/spark/landing/air_quality/yellow_tripdata_2025-01_ext.csv"
+            "/opt/spark/landing/air_quality/air_quality_2025_update.csv"
         ],
         "options": {
             "header": true,
@@ -108,13 +108,49 @@
         {
             "action": "validate_null_values",
             "parameters": {
-                "columns": ["Sample Measurement","longitude","latitude"]
+                "columns": [
+                    "Date GMT",
+                    "Time GMT",
+                    "Sample Measurement"
+                ]
             }
         },
         {
             "action": "validate_duplicates",
             "parameters": {
                 "columns": "*"
+            }
+        }
+    ],
+    "cross_batch_quality_checks": [
+        {
+            "action": "validate_duplicates",
+            "parameters": {
+                "columns": [
+                    "state_code",
+                    "county_code",
+                    "site_num",
+                    "parameter_code",
+                    "poc",
+                    "latitude",
+                    "longitude",
+                    "datum",
+                    "parameter_name",
+                    "local_date",
+                    "local_time",
+                    "gmt_date",
+                    "gmt_time",
+                    "sample_measurement",
+                    "units_of_measure",
+                    "mdl",
+                    "qualifier",
+                    "method_type",
+                    "method_code",
+                    "method_name",
+                    "state_name",
+                    "county_name",
+                    "last_change_date"
+                ]
             }
         }
     ]
