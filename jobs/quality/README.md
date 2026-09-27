@@ -1,10 +1,8 @@
 ## Validation Framework
 
-Validation runs on Bronze data before transformations and before data is
-written to the Silver layer.
-
-Every source record receives a temporary `rejection_reasons` list. Each
-configured validator appends a reason when a rule is violated.
+Each validator creates a temporary rejection-reason column when a rule is violated.
+After all validation rules run, these temporary reasons are combined into the
+`rejection_reasons` array.
 
 - Records with no rejection reasons continue to the Silver layer.
 - Records with one or more rejection reasons are excluded from Silver,

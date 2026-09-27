@@ -2,7 +2,7 @@ from functools import reduce
 from operator import and_
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from .validation_results import add_rejection_reason
+from .validation_results import REJECTION_REASON_COLUMN_PREFIX, add_rejection_reason
 
 def validate_allowed_values(df, parameters, validation_context=None):
     column = parameters["column"]
@@ -142,7 +142,14 @@ def validate_duplicates(df, parameters, validation_context=None):
     columns = parameters["columns"]
 
     if columns == "*":
-        columns = df.drop("rejection_reasons").columns
+        columns = [
+            column
+            for column in df.columns
+            if (
+                column != "rejection_reasons"
+                and not column.startswith(REJECTION_REASON_COLUMN_PREFIX)
+            )
+        ]
 
     duplicate_window = (
         Window

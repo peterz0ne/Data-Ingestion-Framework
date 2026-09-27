@@ -9,6 +9,7 @@ from .quality_validators import (
     validate_numeric_range,
 )
 from .validation_results import (
+    finalize_rejection_reasons,
     initialize_rejection_reasons,
     split_valid_and_rejected_records,
 )
@@ -68,6 +69,8 @@ def run_quality_checks(df, quality_checks, reference_datasets=None, schema_error
                 raise ValueError(f"Unknown quality check: {action}")
 
             df = validator(df, parameters, validation_context)
+
+    df = finalize_rejection_reasons(df)
 
     quality_summary = build_quality_summary(df)
 
