@@ -120,10 +120,7 @@
         {
             "action": "validate_null_values",
             "parameters": {
-                "column": "*",
-                "on_failure": {
-                    "action": "warn"
-                }
+                "columns": "*"
             }
         },
         {
