@@ -3,9 +3,7 @@
 Generate a taxi fare training set from the integrated Gold Delta table:
 
 ```sh
-docker exec spark-master /opt/spark/bin/spark-submit \
-  --master spark://spark-master:7077 \
-  /opt/spark/jobs/generate_training_set.py
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/training_set_job.py
 ```
 * Note: Make sure the ingestion pipeline has first run in order for the gold table to be generated
 
