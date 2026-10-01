@@ -13,7 +13,11 @@ from predictions.training import (
 from pyspark.ml import Pipeline, PipelineModel
 
 TRAINING_SET_PATH_PREFIX = "s3a://delta-data/predictions/"
-DEFAULT_CONFIG_PATH = Path(__file__).with_name("ml_tip_prediction.json")
+DEFAULT_CONFIG_PATH = (
+    Path(__file__).parent
+    / "configs"
+    / "ml_tip_prediction.json"
+)
 REQUIRED_SPLITS = {"train", "validation", "test"}
 
 def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict:

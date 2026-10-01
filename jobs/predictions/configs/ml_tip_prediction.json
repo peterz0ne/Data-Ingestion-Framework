@@ -62,6 +62,6 @@
     "features_column": "features",
     "label_column": "tip_amount",
     "prediction_column": "prediction",
-    "output_path": "models/tip_regressor"
+    "output_path": "s3a://delta-data/predictions/models/tip_regressor"
   }
 }
