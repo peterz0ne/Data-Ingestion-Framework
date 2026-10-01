@@ -1,6 +1,6 @@
 # Prediction Training Set
 
-Generate a taxi fare training set from the integrated Gold Delta table:
+Generate a taxi trip prediction training dataset set from the integrated Gold Delta table:
 
 ```sh
 docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/training_set_job.py
