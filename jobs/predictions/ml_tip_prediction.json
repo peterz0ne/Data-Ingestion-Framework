@@ -1,0 +1,67 @@
+{
+  "problem": {
+    "name": "credit_card_tip_prediction",
+    "target_column": "tip_amount",
+    "prediction_description": "Immediately when the trip ends, before the customer pays, estimate the expected recorded tip amount for credit-card trips.",
+    "payment_type_filter": 1
+  },
+  "dataset": {
+    "output_table": "gold_ml_tip_training",
+    "partitions":["pickup_borough"],
+    "id_column": "trip_id",
+    "split_column": "dataset_split",
+    "train_percentage": 70,
+    "validation_percentage": 15,
+    "test_percentage": 15,
+    "split_seed": 42
+  },
+  "features": {
+    "numeric_columns": [
+        "passenger_count",
+        "trip_distance",
+        "fare_amount",
+        "extra",
+        "mta_tax",
+        "tolls_amount",
+        "improvement_surcharge",
+        "airport_fee",
+        "temp_pu",
+        "rhum_pu",
+        "prcp_pu",
+        "wspd_pu",
+        "pres_pu",
+        "cldc_pu",
+        "coco_pu",
+        "average_value_pu",
+        "temp_do",
+        "rhum_do",
+        "prcp_do",
+        "wspd_do",
+        "pres_do",
+        "cldc_do",
+        "coco_do",
+        "average_value_do"
+    ],
+    "categorical_columns": [
+      "vendor_id",
+      "rate_code_id",
+      "payment_type",
+      "dropoff_borough",
+      "dropoff_zone_name",
+      "dropoff_service_zone",
+      "pickup_borough",
+      "pickup_zone_name",
+      "pickup_service_zone"
+    ],
+    "datetime_columns": [
+      "pickup_datetime",
+      "dropoff_datetime"
+    ]
+  },
+  "model": {
+    "features_column": "features",
+    "label_column": "tip_amount",
+    "prediction_column": "prediction",
+    "output_path": "models/tip_regressor"
+  }
+}
