@@ -115,7 +115,7 @@ def build_feature_pipeline() -> Pipeline:
     return Pipeline(stages=stages)
 
 
-def build_and_exec_pipeline() -> Pipeline:
+def build_and_exec_pipeline():
     spark = create_spark("predictions")
     config = load_config(get_feat_config_path())
     df = read_dataset(spark,config["dataset"]['table'])
