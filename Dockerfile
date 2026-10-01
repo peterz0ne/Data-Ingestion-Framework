@@ -7,12 +7,14 @@ RUN mkdir -p /home/spark \
     && chown -R spark:spark /home/spark
 
 ENV HOME=/home/spark
+
 ENV JUPYTER_RUNTIME_DIR=/home/spark/.local/share/jupyter/runtime
 
 # Delta Lake + JupyterLab
 RUN pip install --no-cache-dir \
     delta-spark==4.0.0 \
-    jupyterlab
+    jupyterlab \
+    numpy
 
 # Delta Lake + S3/MinIO dependencies
 RUN curl -fL \
