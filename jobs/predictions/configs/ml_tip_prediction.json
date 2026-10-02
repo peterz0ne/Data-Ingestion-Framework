@@ -15,6 +15,15 @@
     "test_percentage": 15,
     "split_seed": 42
   },
+  "comparison": {
+    "raw_output_table": "raw_ml_tip_training",
+    "raw_source_configs": {
+      "taxi_trips": "configs/taxi_trips.json",
+      "weather": "configs/weather.json",
+      "air_quality": "configs/air_quality.json",
+      "taxi_zones": "configs/taxi_zones.json"
+    }
+  },
   "features": {
     "numeric_columns": [
         "passenger_count",
