@@ -86,29 +86,19 @@ def split_dataset(df,train,val,test,seed):
         seed=seed
     )
 
-# def transform_features(df,config):
-#     df = datetime_transformations(df,config["datetime_columns"])  
-#     df = numerical_transformations(df,config["numeric_columns"])  
-#     df = categorical_transformations(df,config["categorical_columns"])  
-#     df = vector_encoder(df,
-#                         config["datetime_columns"]
-#                         +config["numeric_columns"]
-#                         +[f"{c}_encoded" for c in config["categorical_columns"]])
-#     return df
 
 def dataset_specific_transformation(df,config):
     df = df.filter(df.payment_type == config['problem']['payment_type_filter'])
     target = F.col(config["problem"]["target_column"])
     df = df.filter(target.isNotNull() & (target > 0))
-    return df.drop("payment_type","total_amount")
+    return df.drop("total_amount")
     
 def read_dataset(spark,table):
     return spark.sql(f"select * from delta.`s3a://delta-data/predictions/{table}`")
 
 
 
-def build_feature_pipeline() -> Pipeline:
-    config = load_config(get_feat_config_path())
+def build_feature_pipeline(config) -> Pipeline:
     features = config["features"]
 
     numeric_columns = features["numeric_columns"]
@@ -137,24 +127,43 @@ def write_to_table(df,table_path):
     df.write.format("delta").option("overwriteSchema", "true").mode("overwrite").save(f"s3a://delta-data/predictions/{table_path}")
 
 
-def main():
+def create_feature_dataset(export=False):
     spark = create_spark("predictions")
     config = load_config(get_feat_config_path())
     df = read_dataset(spark,config["dataset"]['output_table'])
     df = dataset_specific_transformation(df,config)
     df = datetime_transformations(df,config["features"]["datetime_columns"])
-    df = build_feature_pipeline().fit(df).transform(df)
+
+
+    df_train = df.filter(F.col(config['dataset']['split_column']) == "train")
+    df_test = df.filter(F.col(config['dataset']['split_column'])  == "test")
+    df_val = df.filter(F.col(config['dataset']['split_column'])  == "validation")
+
+    df_train = build_feature_pipeline(config).fit(df_train).transform(df_train)
+    df_test = build_feature_pipeline(config).fit(df_test).transform(df_test)
+    df_val = build_feature_pipeline(config).fit(df_val).transform(df_val)
+
+    df = df_train.union(df_val).union(df_test)
+
     df = df.select([
         c for c in df.columns
-        if c == "features" or c==config['problem']['target_column']
+        if c == "features" or c==config['problem']['target_column'] or c==config['dataset']['split_column']
     ])
-    train,val,test = split_dataset(df,config['dataset']['train_percentage'],config['dataset']['validation_percentage'],config['dataset']['test_percentage'],config['dataset']['split_seed'])
-    train = train.withColumn("dataset_split",F.lit("train"))
-    val = val.withColumn("dataset_split",F.lit("val"))
-    test = test.withColumn("dataset_split",F.lit("test"))
-    df_union = train.union(val).union(test)
+    # train,val,test = split_dataset(df,config['dataset']['train_percentage'],config['dataset']['validation_percentage'],config['dataset']['test_percentage'],config['dataset']['split_seed'])
+    # train = train.withColumn("dataset_split",F.lit("train"))
+    # val = val.withColumn("dataset_split",F.lit("val"))
+    # test = test.withColumn("dataset_split",F.lit("test"))
+    # df_union = train.union(val).union(test)
     # df_union.show()
-    write_to_table(df_union,config['dataset']['feature_table'])
+    if(export):
+        write_to_table(df,config['dataset']['feature_table'])
+    return df
 
-if __name__ == "__main__":
-    main()
+
+# if __name__ == "__main__":
+#     create_feature_dataset(True)
+
+
+# split is already done
+# transformations, scaling should be done on each split instead of whole dataset
+# delete payment type later

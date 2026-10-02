@@ -46,6 +46,7 @@
     "categorical_columns": [
       "vendor_id",
       "rate_code_id",
+      "payment_type",
       "dropoff_borough",
       "dropoff_zone_name",
       "dropoff_service_zone",
