@@ -2,21 +2,23 @@ from pyspark.ml.feature import (
     Imputer,
     StandardScaler,
     OneHotEncoder,
-    VectorAssembler
+    VectorAssembler,
+    StringIndexer
 )
 from pyspark.sql import functions as F
 from pyspark.ml import Pipeline
-
+import sys
+sys.path.append("/opt/spark/jobs")
 
 from helpers import get_feat_config_path,load_config,create_spark
 
 def datetime_transformations(df,columns):
     for col in columns:
          df = (
-              df.withColumn(f"{col}_month_sin",F.sin(2 * F.pi() * F.month(F.col(col)) / range))
-                .withColumn(f"{col}_day_of_year_sin",F.sin(2 * F.pi() * F.dayofyear(F.col(col))/ range))
-                .withColumn(f"{col}_hour_sin",F.sin(2 * F.pi() * F.hour(F.col(col))/ range))
-                .withColumn(f"{col}_month",F.sin(2 * F.pi() * F.hour(F.col(col))/ range))
+              df.withColumn(f"{col}_month_sin",F.sin(2 * F.pi() * F.month(F.col(col)) / 12))
+                .withColumn(f"{col}_day_of_year_sin",F.sin(2 * F.pi() * F.dayofyear(F.col(col))/ 365))
+                .withColumn(f"{col}_hour_sin",F.sin(2 * F.pi() * F.hour(F.col(col))/ 24))
+                .withColumn(f"{col}_month",F.month(F.col(col)))
                 .withColumn(f"{col}_day",F.day(F.col(col)))
                 .withColumn(f"{col}_is_weekend",F.when(F.dayofweek(F.col(col)).isin(1, 7), 1).otherwise(0))
               )
@@ -50,11 +52,26 @@ def numerical_transformations(columns):
     ]
 
 def categorical_transformations(columns):
+    indexers = [
+        StringIndexer(
+            inputCol=c,
+            outputCol=f"{c}_index",
+            handleInvalid="keep"
+        )
+        for c in columns
+    ]
+
     encoder = OneHotEncoder(
-        inputCols=columns,
+        inputCols=[f"{c}_index" for c in columns],
         outputCols=[f"{c}_encoded" for c in columns]
     )
-    return encoder#.fit(df).transform(df)
+
+    return indexers + [encoder]
+    # encoder = OneHotEncoder(
+    #     inputCols=columns,
+    #     outputCols=[f"{c}_encoded" for c in columns]
+    # )
+    # return encoder#.fit(df).transform(df)
 
 def vector_encoder(columns):
     assembler = VectorAssembler(
@@ -65,7 +82,7 @@ def vector_encoder(columns):
 
 def split_dataset(df,train,val,test,seed):
     return df.randomSplit(
-        [train, val, test],
+        [float(train), float(val), float(test)],
         seed=seed
     )
 
@@ -81,11 +98,12 @@ def split_dataset(df,train,val,test,seed):
 
 def dataset_specific_transformation(df,config):
     df = df.filter(df.payment_type == config['problem']['payment_type_filter'])
-    df = df.filter(F.col(config['problem']['target_column']).isNotNull() & F.col(config['problem']['target_column'])>0)
+    target = F.col(config["problem"]["target_column"])
+    df = df.filter(target.isNotNull() & (target > 0))
     return df.drop("payment_type","total_amount")
     
 def read_dataset(spark,table):
-    return spark.sql(f"select * from delta.`s3a://delta-data/gold/{table}`")
+    return spark.sql(f"select * from delta.`s3a://delta-data/predictions/{table}`")
 
 
 
@@ -98,8 +116,8 @@ def build_feature_pipeline() -> Pipeline:
     datetime_columns = features["datetime_columns"]
 
     stages = [
-        numerical_transformations(numeric_columns),
-        categorical_transformations(categorical_columns),
+        *numerical_transformations(numeric_columns),
+        *categorical_transformations(categorical_columns),
         vector_encoder(
             [f"{c}_month_sin" for c in datetime_columns]
             +[f"{c}_day_of_year_sin" for c in datetime_columns]
@@ -115,11 +133,16 @@ def build_feature_pipeline() -> Pipeline:
     return Pipeline(stages=stages)
 
 
-def build_and_exec_pipeline():
+def write_to_table(df,table_path):
+    df.write.format("delta").option("overwriteSchema", "true").mode("overwrite").save(f"s3a://delta-data/predictions/{table_path}")
+
+
+def main():
     spark = create_spark("predictions")
     config = load_config(get_feat_config_path())
-    df = read_dataset(spark,config["dataset"]['table'])
+    df = read_dataset(spark,config["dataset"]['output_table'])
     df = dataset_specific_transformation(df,config)
+    df = datetime_transformations(df,config["features"]["datetime_columns"])
     df = build_feature_pipeline().fit(df).transform(df)
     df = df.select([
         c for c in df.columns
@@ -129,4 +152,9 @@ def build_and_exec_pipeline():
     train = train.withColumn("dataset_split",F.lit("train"))
     val = val.withColumn("dataset_split",F.lit("val"))
     test = test.withColumn("dataset_split",F.lit("test"))
-    return train,val,test
+    df_union = train.union(val).union(test)
+    # df_union.show()
+    write_to_table(df_union,config['dataset']['feature_table'])
+
+if __name__ == "__main__":
+    main()

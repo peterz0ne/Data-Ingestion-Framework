@@ -7,6 +7,7 @@
   },
   "dataset": {
     "output_table": "gold_ml_tip_training",
+    "feature_table": "feature_training",
     "partitions":["pickup_borough"],
     "id_column": "trip_id",
     "split_column": "dataset_split",
@@ -45,7 +46,6 @@
     "categorical_columns": [
       "vendor_id",
       "rate_code_id",
-      "payment_type",
       "dropoff_borough",
       "dropoff_zone_name",
       "dropoff_service_zone",
