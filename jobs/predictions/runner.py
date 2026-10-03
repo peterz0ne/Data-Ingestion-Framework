@@ -88,18 +88,26 @@ def predict_tip_amounts(
 
     return fitted_pipeline.transform(prepared_trips)
 
+def prepare_and_fit_tip_prediction_model(
+    dataset: DataFrame,
+    config: dict,
+) -> tuple[PipelineModel, DataFrame]:
+    prepared_dataset = prepare_training_dataframe(dataset, config)
+
+    fitted_pipeline = fit_tip_prediction_model(prepared_dataset, config)
+
+    return fitted_pipeline, prepared_dataset
+
 def run_tip_prediction_training(
     spark: SparkSession,
     config: dict,
 ) -> dict[str, float]:
     dataset = load_training_dataset(spark, config)
-    dataset = prepare_training_dataframe(dataset, config)
-
-    fitted_pipeline = fit_tip_prediction_model(dataset, config)
+    fitted_pipeline, prepared_dataset = prepare_and_fit_tip_prediction_model(dataset, config)
 
     test_metrics = evaluate_model_on_split(
         fitted_pipeline,
-        dataset,
+        prepared_dataset,
         "test",
         config,
     )
