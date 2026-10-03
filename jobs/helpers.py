@@ -32,11 +32,11 @@ def load_config(config_path):
 def get_feat_config_path():
     return "/opt/spark/jobs/predictions/configs/ml_tip_prediction.json"
 
-def create_spark(dataset):
+def create_spark(dataset, executor_memory: str = "2g"):
     spark = (
         SparkSession.builder
         .appName(f"Read-{dataset}")
-        .config("spark.executor.memory", "2g")
+        .config("spark.executor.memory", executor_memory)
         .config("spark.sql.maxPlanStringLength", "8192")
         .getOrCreate()
     )

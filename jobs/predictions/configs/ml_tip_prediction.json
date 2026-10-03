@@ -33,6 +33,16 @@
       }
     ]
   },
+  "comparison": {
+    "raw_output_table": "raw_ml_tip_training",
+    "baseline_end": "2025-01-01",
+    "raw_source_configs": {
+      "taxi_trips": "configs/taxi_trips.json",
+      "weather": "configs/weather.json",
+      "air_quality": "configs/air_quality.json",
+      "taxi_zones": "configs/taxi_zones.json"
+    }
+  },
   "features": {
     "numeric_columns": [
         "passenger_count",
@@ -74,6 +84,22 @@
     "datetime_columns": [
       "pickup_datetime",
       "dropoff_datetime"
+    ],
+    "onehot_columns": [
+      "vendor_id",
+      "rate_code_id",
+      "dropoff_borough",
+      "dropoff_service_zone",
+      "pickup_borough",
+      "pickup_service_zone"
+    ],
+    "ordinal_columns": [
+      "dropoff_zone_name",
+      "pickup_zone_name",
+      "pickup_datetime_month",
+      "pickup_datetime_day",
+      "dropoff_datetime_month",
+      "dropoff_datetime_day"
     ]
   },
   "model": {
