@@ -17,7 +17,7 @@
     "filters":[
       {
         "column":"payment_type",
-        "filter_type":"ge",
+        "filter_type":"eq",
         "value":1
       },
       {
