@@ -2,8 +2,7 @@
   "problem": {
     "name": "credit_card_tip_prediction",
     "target_column": "tip_amount",
-    "prediction_description": "Immediately when the trip ends, before the customer pays, estimate the expected recorded tip amount for credit-card trips.",
-    "payment_type_filter": 1
+    "prediction_description": "Immediately when the trip ends, before the customer pays, estimate the expected recorded tip amount for credit-card trips."
   },
   "dataset": {
     "output_table": "gold_ml_tip_training",
@@ -14,7 +13,23 @@
     "train_percentage": 70,
     "validation_percentage": 15,
     "test_percentage": 15,
-    "split_seed": 42
+    "split_seed": 42,
+    "filters":[
+      {
+        "column":"payment_type",
+        "filter_type":"ge",
+        "value":1
+      },
+      {
+        "column":"tip_amount",
+        "filter_type":"ge",
+        "value":0
+      },
+      {
+        "column":"tip_amount",
+        "filter_type":"nulls"
+      }
+    ]
   },
   "features": {
     "numeric_columns": [
