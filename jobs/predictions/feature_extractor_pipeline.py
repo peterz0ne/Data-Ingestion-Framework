@@ -3,7 +3,6 @@ from pyspark.ml.feature import (
     StandardScaler,
     OneHotEncoder,
     VectorAssembler,
-    FeatureHasher,
     StringIndexer
 )
 from pyspark.sql import functions as F
@@ -28,14 +27,13 @@ def datetime_transformations(df,columns):
               )
     return df
 
-
 def numerical_transformations(columns):
 
     imputer = Imputer(
         inputCols=columns,
         outputCols=columns,
         strategy="median"
-        )
+    )
 
     numeric_vector = VectorAssembler(
         inputCols=columns,
@@ -82,24 +80,15 @@ def categorical_ordinal_transformations(columns):
         )
         for c in columns
     ]
-
-
     return indexers
 
-def vector_encoder(columns):
+def vector_encoder(columns, output_column):
     assembler = VectorAssembler(
         inputCols=columns,
-        outputCol="features",
+        outputCol=output_column,
         handleInvalid="keep"
     )
-    return assembler#.transform(df)
-
-def split_dataset(df,train,val,test,seed):
-    return df.randomSplit(
-        [float(train), float(val), float(test)],
-        seed=seed
-    )
-
+    return assembler
 
 def dataset_specific_transformation(df,config):
     df = df.filter(df.payment_type == config['problem']['payment_type_filter'])
@@ -110,11 +99,15 @@ def dataset_specific_transformation(df,config):
 def read_dataset(spark,table):
     return spark.sql(f"select * from delta.`s3a://delta-data/predictions/{table}`")
 
+def prepare_feature_dataframe(df, config):
+    df = dataset_specific_transformation(df, config)
+    return datetime_transformations(df, config["features"]["datetime_columns"])
 
+def build_feature_pipeline(config, df_train) -> Pipeline:
+    config = update_config(config)
+    config = split_based_on_cardinality(df_train, config)
 
-def build_feature_pipeline(config) -> Pipeline:
     features = config["features"]
-
     numeric_columns = features["numeric_columns"]
     ordinal_columns = features["ordinal_cols"]
     onehot_columns = features["onehot_cols"]
@@ -134,14 +127,19 @@ def build_feature_pipeline(config) -> Pipeline:
             +[f"{c}_is_weekend" for c in datetime_columns]
             + ["__numeric_scaled"]
             + [f"{c}_encoded" for c in ordinal_columns]
-            + [f"{c}_encoded" for c in onehot_columns]
+            + [f"{c}_encoded" for c in onehot_columns],
+            config["model"]["features_column"],
         )
     ]
 
     return Pipeline(stages=stages)
 
 def split_based_on_cardinality(df,config,limit=10):
-    categorical_cols = config['features']['categorical_columns']
+    categorical_cols = [
+        c
+        for c in config["features"]["categorical_columns"]
+        if c != "payment_type"
+    ]
     cardinality = {
         c: df.select(c).distinct().count()
         for c in categorical_cols
@@ -159,7 +157,6 @@ def split_based_on_cardinality(df,config,limit=10):
     config['features']['onehot_cols']=onehot_cols
     return config
 
-
 def update_config(config):
     for c in config['features']['datetime_columns']:
         config['features']['categorical_columns'].append(f"{c}_month")
@@ -169,36 +166,27 @@ def update_config(config):
 def write_to_table(df,table_path):
     df.write.format("delta").option("overwriteSchema", "true").mode("overwrite").save(f"s3a://delta-data/predictions/{table_path}")
 
-
 def create_feature_dataset(export=False):
     spark = create_spark("predictions")
     config = load_config(get_feat_config_path())
     df = read_dataset(spark,config["dataset"]['output_table'])
-    df = dataset_specific_transformation(df,config)
-    df = datetime_transformations(df,config["features"]["datetime_columns"])
+    df = prepare_feature_dataframe(df, config)
 
-    df_train = df.filter(F.col(config['dataset']['split_column']) == "train")
-    config = update_config(config)
-    config = split_based_on_cardinality(df,config)
     # fit the pipeline on train data and transform the whole dataset (all splits) to avoid data leakage
     # we want to use train's statistics to transform the whole dataset
-    model = build_feature_pipeline(config).fit(df_train)
+    df_train = df.filter(F.col(config['dataset']['split_column']) == "train")
+    model = build_feature_pipeline(config, df_train).fit(df_train)
 
     df = model.transform(df)
-    df = df.select([
-        c for c in df.columns
-        if c == "features" or c==config['problem']['target_column'] or c==config['dataset']['split_column']
-    ])
+    df = df.select(
+        config["model"]["features_column"],
+        config["problem"]["target_column"],
+        config["dataset"]["split_column"],
+    )
 
     if(export):
         write_to_table(df,config['dataset']['feature_table'])
     return df
 
-
 if __name__ == "__main__":
     create_feature_dataset(True)
-
-
-# split is already done
-# transformations, scaling should be done on each split instead of whole dataset
-# delete payment type later
