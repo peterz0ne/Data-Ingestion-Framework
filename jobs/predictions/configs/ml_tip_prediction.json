@@ -35,6 +35,7 @@
   },
   "comparison": {
     "raw_output_table": "raw_ml_tip_training",
+    "baseline_end": "2025-01-01",
     "raw_source_configs": {
       "taxi_trips": "configs/taxi_trips.json",
       "weather": "configs/weather.json",
