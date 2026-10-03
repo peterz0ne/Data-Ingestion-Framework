@@ -28,7 +28,7 @@ docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-mast
 
 * To measure the sizes of each table, run the notebook: `notebooks/storage_metrics/storage_overhead.ipynb`
 
-## Incremental Updates and Schema Evolution
+# Incremental Updates and Schema Evolution
 
 First run the complete baseline pipeline:
 
@@ -67,3 +67,33 @@ Invalid records are written to the Delta quarantine table at `metadata/rejected_
 ## Reproducing Evaluation Experiments
 
 Run the notebooks in [notebooks/update_evaluation](./notebooks/update_evaluation).
+
+# Machine-Learning Workflow
+
+After starting the containers and running the ingestion pipeline to create the integrated Gold table, run the following workflow.
+
+1. Generate the training dataset:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/training_set_job.py
+```
+
+2. Run feature engineering:
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/predictions/feature_extractor_pipeline.py
+```
+
+3. Train and evaluate the tip-prediction model:
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/train_tip_model_job.py
+```
+
+This reports test MAE and RMSE and saves the fitted model.
+
+4. Reproduce the raw-versus-platform comparison:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/compare_training_workflow_job.py
+```
+
+5. Retrain after new data are available by rerunning the training-dataset generation command followed by the model-training command. This replaces the saved model with one fitted on the refreshed data.
