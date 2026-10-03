@@ -76,7 +76,7 @@ def build_training_set(
         validation_percentage,
         seed,
     )
-    return split_data.drop(id_column)
+    return split_data
 
 
 def validate_percentages(

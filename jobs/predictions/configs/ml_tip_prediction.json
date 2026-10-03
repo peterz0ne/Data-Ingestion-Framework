@@ -2,18 +2,36 @@
   "problem": {
     "name": "credit_card_tip_prediction",
     "target_column": "tip_amount",
-    "prediction_description": "Immediately when the trip ends, before the customer pays, estimate the expected recorded tip amount for credit-card trips.",
-    "payment_type_filter": 1
+    "prediction_description": "Immediately when the trip ends, before the customer pays, estimate the expected recorded tip amount for credit-card trips."
   },
   "dataset": {
     "output_table": "gold_ml_tip_training",
+    "feature_table": "feature_training",
     "partitions":["pickup_borough"],
     "id_column": "trip_id",
     "split_column": "dataset_split",
     "train_percentage": 70,
     "validation_percentage": 15,
     "test_percentage": 15,
-    "split_seed": 42
+    "split_seed": 42,
+    "inference_filters": [
+      {
+        "column": "payment_type",
+        "filter_type": "eq",
+        "value": 1
+      }
+    ],
+    "training_filters": [
+      {
+        "column": "tip_amount",
+        "filter_type": "ge",
+        "value": 0
+      },
+      {
+        "column": "tip_amount",
+        "filter_type": "nulls"
+      }
+    ]
   },
   "comparison": {
     "raw_output_table": "raw_ml_tip_training",
@@ -71,6 +89,7 @@
     "features_column": "features",
     "label_column": "tip_amount",
     "prediction_column": "prediction",
-    "output_path": "models/tip_regressor"
+    "max_bins": 300,
+    "output_path": "s3a://delta-data/predictions/models/tip_regressor"
   }
 }
