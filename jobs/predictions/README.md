@@ -35,3 +35,25 @@ s3a://delta-data/predictions/feature_training
 ```
 
 The output contains `features`, `tip_amount`, and `dataset_split`.
+
+## Model training and evaluation (Task 3)
+
+Run the complete ML pipeline with:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/train_tip_model_job.py
+```
+
+The job reads the Task 1 training dataset, applies the Task 2 feature-engineering pipeline, trains the regression model on the training split, reports test MAE and RMSE, and saves the fitted pipeline.
+
+To retrain when new data is available, regenerate the Task 1 dataset and rerun this command. The stored model is replaced with the newly fitted pipeline.
+
+### Reusing the saved model for inference
+
+After training, the fitted pipeline can predict tips for new raw trip records without retraining:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/predict_tip_model_job.py
+```
+
+The demonstration job loads the saved pipeline, applies inference-safe feature preparation, and prints `trip_id`, actual `tip_amount`, and the `prediction` tip.
