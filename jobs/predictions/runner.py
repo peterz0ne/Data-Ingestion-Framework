@@ -62,11 +62,17 @@ def fit_tip_prediction_model(
 ) -> PipelineModel:
     training_data = load_dataset_split(dataset, config, "train")
 
-    feature_pipeline = build_feature_pipeline(config, training_data)
+    print("[model-training] Building feature pipeline")
+    feature_pipeline = build_feature_pipeline(config)
+
+    print("[model-training] Fitting feature pipeline and Random Forest")
     regressor = build_regressor(config)
     training_pipeline = build_training_pipeline(feature_pipeline, regressor)
 
-    return fit_training_pipeline(training_data, training_pipeline)
+    fitted_pipeline = fit_training_pipeline(training_data, training_pipeline)
+
+    print("[model-training] Model fitting complete")
+    return fitted_pipeline
 
 def evaluate_model_on_split(
     fitted_pipeline: PipelineModel,
@@ -74,10 +80,14 @@ def evaluate_model_on_split(
     split_name: str,
     config: dict,
 ) -> dict[str, float]:
+    print(f"[model-evaluation] Evaluating {split_name} split")
     split_data = load_dataset_split(dataset, config, split_name)
     predictions = generate_predictions(fitted_pipeline, split_data)
 
-    return evaluate_predictions(predictions, config)
+    metrics = evaluate_predictions(predictions, config)
+
+    print(f"[model-evaluation] {split_name} evaluation complete")
+    return metrics
 
 def predict_tip_amounts(
     new_trips: DataFrame,

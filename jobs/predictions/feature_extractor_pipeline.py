@@ -130,15 +130,12 @@ def prepare_training_dataframe(df, config):
 def read_dataset(spark,table):
     return spark.sql(f"select * from delta.`s3a://delta-data/predictions/{table}`")
 
-def build_feature_pipeline(config, df_train) -> Pipeline:
-    config = update_config(config)
-    config = split_based_on_cardinality(df_train, config)
-
+def build_feature_pipeline(config: dict) -> Pipeline:
     features = config["features"]
     numeric_columns = features["numeric_columns"]
-    ordinal_columns = features["ordinal_cols"]
-    onehot_columns = features["onehot_cols"]
     datetime_columns = features["datetime_columns"]
+    onehot_columns = features["onehot_columns"]
+    ordinal_columns = features["ordinal_columns"]
 
     stages = [
         *numerical_transformations(numeric_columns),
@@ -161,35 +158,6 @@ def build_feature_pipeline(config, df_train) -> Pipeline:
 
     return Pipeline(stages=stages)
 
-def split_based_on_cardinality(df,config,limit=10):
-    categorical_cols = [
-        c
-        for c in config["features"]["categorical_columns"]
-        if c != "payment_type"
-    ]
-    cardinality = {
-        c: df.select(c).distinct().count()
-        for c in categorical_cols
-    }
-    onehot_cols = [
-        c for c in categorical_cols
-        if cardinality[c] <= limit
-    ]
-
-    ordinal_cols = [
-        c for c in categorical_cols
-        if cardinality[c] > limit
-    ]
-    config['features']['ordinal_cols']=ordinal_cols
-    config['features']['onehot_cols']=onehot_cols
-    return config
-
-def update_config(config):
-    for c in config['features']['datetime_columns']:
-        config['features']['categorical_columns'].append(f"{c}_month")
-        config['features']['categorical_columns'].append(f"{c}_day")
-    return config
-
 def write_to_table(df,table_path):
     df.write.format("delta").option("overwriteSchema", "true").mode("overwrite").save(f"s3a://delta-data/predictions/{table_path}")
 
@@ -202,7 +170,7 @@ def create_feature_dataset(export=False):
     # fit the pipeline on train data and transform the whole dataset (all splits) to avoid data leakage
     # we want to use train's statistics to transform the whole dataset
     df_train = df.filter(F.col(config['dataset']['split_column']) == "train")
-    model = build_feature_pipeline(config, df_train).fit(df_train)
+    model = build_feature_pipeline(config).fit(df_train)
 
     df = model.transform(df)
     df = df.select(

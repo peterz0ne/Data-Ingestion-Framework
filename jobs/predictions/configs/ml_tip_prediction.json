@@ -84,6 +84,22 @@
     "datetime_columns": [
       "pickup_datetime",
       "dropoff_datetime"
+    ],
+    "onehot_columns": [
+      "vendor_id",
+      "rate_code_id",
+      "dropoff_borough",
+      "dropoff_service_zone",
+      "pickup_borough",
+      "pickup_service_zone"
+    ],
+    "ordinal_columns": [
+      "dropoff_zone_name",
+      "pickup_zone_name",
+      "pickup_datetime_month",
+      "pickup_datetime_day",
+      "dropoff_datetime_month",
+      "dropoff_datetime_day"
     ]
   },
   "model": {

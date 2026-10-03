@@ -77,7 +77,7 @@ def print_experiment_result(result: dict[str, object]) -> None:
 
 def main() -> None:
     config = load_config(get_feat_config_path())
-    spark = create_spark("compare-raw-and-platform-training", executor_memory="3g")
+    spark = create_spark("compare-raw-and-platform-training")
 
     try:
         raw_result = run_training_experiment(
