@@ -107,7 +107,7 @@ docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-mast
 platform workflow from Gold. 
 - Both reuse the same feature-engineering and model
 training code. 
-- It reports the end-to-end runtime through model fitting and test
-MAE/RMSE for each workflow.
-- It does not write a new dataset or overwrite the
-saved model.
+- It reports end-to-end training time through model fit. The measurement
+includes dataset construction, preprocessing, feature-pipeline fitting,
+and Random Forest fitting. Test MAE/RMSE are calculated afterward and are excluded from the timed result.
+- The raw workflow rebuilds directly from source files for each run. The comparison job does not write an intermediate dataset or overwrite the saved model.
