@@ -9,6 +9,7 @@ def build_regressor(config: dict) -> RandomForestRegressor:
         featuresCol=model_config["features_column"],
         labelCol=model_config["label_column"],
         predictionCol=model_config["prediction_column"],
+        maxBins=model_config["max_bins"],
         seed=config["dataset"]["split_seed"],
     )
 
@@ -44,3 +45,8 @@ def save_fitted_pipeline(
     output_path: str,
 ) -> None:
     fitted_pipeline.write().overwrite().save(output_path)
+
+def load_fitted_pipeline(
+    model_path: str,
+) -> PipelineModel:
+    return PipelineModel.load(model_path)

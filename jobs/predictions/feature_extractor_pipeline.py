@@ -90,28 +90,45 @@ def vector_encoder(columns, output_column):
     )
     return assembler
 
-def dataset_specific_transformation(df,config):
-    for f in config['dataset']['filters']:
-        if f['filter_type'] == 'ge':
-            df = df.filter(F.col(f['column'])>= f['value'])
-        elif f['filter_type'] == 'eq':
-                    df = df.filter(F.col(f['column'])== f['value'])
-        elif f['filter_type'] == 'le':
-                    df = df.filter(F.col(f['column'])<= f['value'])
-        elif f['filter_type'] == 'ne':
-                    df = df.filter(F.col(f['column'])!= f['value'])
-        elif f['filter_type'] == 'nulls':
-                    df = df.filter(F.col(f['column']).isNotNull())
+def apply_filters(df, filters):
+    for filter_config in filters:
+        column = F.col(filter_config["column"])
+        filter_type = filter_config["filter_type"]
 
-                
+        if filter_type == "ge":
+            df = df.filter(column >= filter_config["value"])
+        elif filter_type == "eq":
+            df = df.filter(column == filter_config["value"])
+        elif filter_type == "le":
+            df = df.filter(column <= filter_config["value"])
+        elif filter_type == "ne":
+            df = df.filter(column != filter_config["value"])
+        elif filter_type == "nulls":
+            df = df.filter(column.isNotNull())
+
     return df
+
+def prepare_inference_dataframe(df, config):
+    df = apply_filters(
+        df,
+        config["dataset"]["inference_filters"],
+    )
+
+    return datetime_transformations(
+        df,
+        config["features"]["datetime_columns"],
+    )
+
+def prepare_training_dataframe(df, config):
+    df = prepare_inference_dataframe(df, config)
+
+    return apply_filters(
+        df,
+        config["dataset"]["training_filters"],
+    )
 
 def read_dataset(spark,table):
     return spark.sql(f"select * from delta.`s3a://delta-data/predictions/{table}`")
-
-def prepare_feature_dataframe(df, config):
-    df = dataset_specific_transformation(df, config)
-    return datetime_transformations(df, config["features"]["datetime_columns"])
 
 def build_feature_pipeline(config, df_train) -> Pipeline:
     config = update_config(config)
@@ -180,7 +197,7 @@ def create_feature_dataset(export=False):
     spark = create_spark("predictions")
     config = load_config(get_feat_config_path())
     df = read_dataset(spark,config["dataset"]['output_table'])
-    df = prepare_feature_dataframe(df, config)
+    df = prepare_training_dataframe(df, config)
 
     # fit the pipeline on train data and transform the whole dataset (all splits) to avoid data leakage
     # we want to use train's statistics to transform the whole dataset

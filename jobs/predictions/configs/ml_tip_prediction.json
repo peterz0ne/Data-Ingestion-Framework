@@ -14,20 +14,22 @@
     "validation_percentage": 15,
     "test_percentage": 15,
     "split_seed": 42,
-    "filters":[
+    "inference_filters": [
       {
-        "column":"payment_type",
-        "filter_type":"eq",
-        "value":1
+        "column": "payment_type",
+        "filter_type": "eq",
+        "value": 1
+      }
+    ],
+    "training_filters": [
+      {
+        "column": "tip_amount",
+        "filter_type": "ge",
+        "value": 0
       },
       {
-        "column":"tip_amount",
-        "filter_type":"ge",
-        "value":0
-      },
-      {
-        "column":"tip_amount",
-        "filter_type":"nulls"
+        "column": "tip_amount",
+        "filter_type": "nulls"
       }
     ]
   },
@@ -78,6 +80,7 @@
     "features_column": "features",
     "label_column": "tip_amount",
     "prediction_column": "prediction",
+    "max_bins": 300,
     "output_path": "s3a://delta-data/predictions/models/tip_regressor"
   }
 }

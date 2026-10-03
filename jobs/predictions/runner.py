@@ -1,5 +1,5 @@
-import json
-from pathlib import Path
+from predictions.feature_extractor_pipeline import prepare_inference_dataframe
+from predictions.training import load_fitted_pipeline
 from pyspark.sql import DataFrame, SparkSession
 from predictions.evaluation import calculate_regression_metric
 from predictions.training import (
@@ -10,19 +10,13 @@ from predictions.training import (
     save_fitted_pipeline,
     select_dataset_split,
 )
-from pyspark.ml import Pipeline, PipelineModel
+from pyspark.ml import PipelineModel
+from predictions.feature_extractor_pipeline import (
+    build_feature_pipeline,
+    prepare_training_dataframe,
+)
 
 TRAINING_SET_PATH_PREFIX = "s3a://delta-data/predictions/"
-DEFAULT_CONFIG_PATH = (
-    Path(__file__).parent
-    / "configs"
-    / "ml_tip_prediction.json"
-)
-REQUIRED_SPLITS = {"train", "validation", "test"}
-
-def load_config(config_path: Path = DEFAULT_CONFIG_PATH) -> dict:
-    with config_path.open(encoding="utf-8") as config_file:
-        return json.load(config_file)
 
 def load_training_dataset(spark: SparkSession, config: dict) -> DataFrame:
     output_table = config["dataset"]["output_table"]
@@ -40,40 +34,6 @@ def load_dataset_split(
         config["dataset"]["split_column"],
         split_name,
     )
-
-def create_spark_session() -> SparkSession:
-    return (
-        SparkSession.builder
-        .appName("credit_card_tip_prediction")
-        .getOrCreate()
-    )
-
-def validate_dataset_splits(
-    dataset: DataFrame,
-    config: dict,
-) -> None:
-    split_column = config["dataset"]["split_column"]
-
-    available_splits = {
-        row[split_column]
-        for row in dataset.select(split_column).distinct().collect()
-    }
-    missing_splits = REQUIRED_SPLITS - available_splits
-
-    if missing_splits:
-        raise ValueError(
-            f"Training dataset is missing splits: {', '.join(sorted(missing_splits))}."
-        )
-
-def prepare_training_dataset(
-    spark: SparkSession,
-    config: dict,
-) -> DataFrame:
-    dataset = load_training_dataset(spark, config)
-
-    validate_dataset_splits(dataset, config)
-
-    return dataset
 
 def evaluate_predictions(
     predictions: DataFrame,
@@ -98,11 +58,11 @@ def evaluate_predictions(
 
 def fit_tip_prediction_model(
     dataset: DataFrame,
-    feature_pipeline: Pipeline,
     config: dict,
 ) -> PipelineModel:
     training_data = load_dataset_split(dataset, config, "train")
 
+    feature_pipeline = build_feature_pipeline(config, training_data)
     regressor = build_regressor(config)
     training_pipeline = build_training_pipeline(feature_pipeline, regressor)
 
@@ -119,34 +79,24 @@ def evaluate_model_on_split(
 
     return evaluate_predictions(predictions, config)
 
-def save_tip_prediction_model(
-    fitted_pipeline: PipelineModel,
+def predict_tip_amounts(
+    new_trips: DataFrame,
     config: dict,
-) -> None:
-    save_fitted_pipeline(
-        fitted_pipeline,
-        config["model"]["output_path"],
-    )
+) -> DataFrame:
+    fitted_pipeline = load_fitted_pipeline(config["model"]["output_path"])
+    prepared_trips = prepare_inference_dataframe(new_trips, config)
+
+    return fitted_pipeline.transform(prepared_trips)
 
 def run_tip_prediction_training(
     spark: SparkSession,
-    feature_pipeline: Pipeline,
     config: dict,
-) -> dict[str, dict[str, float]]:
-    dataset = prepare_training_dataset(spark, config)
+) -> dict[str, float]:
+    dataset = load_training_dataset(spark, config)
+    dataset = prepare_training_dataframe(dataset, config)
 
-    fitted_pipeline = fit_tip_prediction_model(
-        dataset,
-        feature_pipeline,
-        config,
-    )
+    fitted_pipeline = fit_tip_prediction_model(dataset, config)
 
-    validation_metrics = evaluate_model_on_split(
-        fitted_pipeline,
-        dataset,
-        "validation",
-        config,
-    )
     test_metrics = evaluate_model_on_split(
         fitted_pipeline,
         dataset,
@@ -154,9 +104,6 @@ def run_tip_prediction_training(
         config,
     )
 
-    save_tip_prediction_model(fitted_pipeline, config)
+    save_fitted_pipeline(fitted_pipeline, config["model"]["output_path"])
 
-    return {
-        "validation": validation_metrics,
-        "test": test_metrics,
-    }
+    return test_metrics
