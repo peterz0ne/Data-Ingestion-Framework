@@ -29,6 +29,9 @@ def load_config(config_path):
     with open(config_path) as file:
         return json.load(file)
 
+def get_feat_config_path():
+    return "/opt/spark/jobs/predictions/configs/ml_tip_prediction.json"
+
 def create_spark(dataset):
     spark = (
         SparkSession.builder

@@ -1,4 +1,4 @@
-# Prediction Training Set
+## Prediction Training Set (Task1)
 
 Generate a taxi trip prediction training dataset set from the integrated Gold Delta table:
 
@@ -17,3 +17,21 @@ It writes the Delta table to
 Set the target, features, split percentages, and seed in the JSON config. The split
 percentages must sum to 100. Split assignment is stable for a given `trip_id` and seed;
 observed row counts may vary slightly from the requested percentages.
+
+## Feature engineering (Task 2)
+
+After generating `gold_ml_tip_training`, run:
+
+```sh
+docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/predictions/feature_extractor_pipeline.py
+```
+
+The job reads `gold_ml_tip_training`, filters to credit-card trips with valid non-negative tips, fits feature preprocessing on the `train` split only, and transforms all dataset splits.
+
+It writes the final feature dataset to:
+
+```text
+s3a://delta-data/predictions/feature_training
+```
+
+The output contains `features`, `tip_amount`, and `dataset_split`.
