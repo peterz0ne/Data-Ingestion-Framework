@@ -91,9 +91,19 @@ def vector_encoder(columns, output_column):
     return assembler
 
 def dataset_specific_transformation(df,config):
-    df = df.filter(df.payment_type == config['problem']['payment_type_filter'])
-    target = F.col(config["problem"]["target_column"])
-    df = df.filter(target.isNotNull() & (target >= 0))
+    for f in config['dataset']['filters']:
+        if f['filter_type'] == 'ge':
+            df = df.filter(F.col(f['column'])>= f['value'])
+        elif f['filter_type'] == 'eq':
+                    df = df.filter(F.col(f['column'])== f['value'])
+        elif f['filter_type'] == 'le':
+                    df = df.filter(F.col(f['column'])<= f['value'])
+        elif f['filter_type'] == 'ne':
+                    df = df.filter(F.col(f['column'])!= f['value'])
+        elif f['filter_type'] == 'nulls':
+                    df = df.filter(F.col(f['column']).isNotNull())
+
+                
     return df
 
 def read_dataset(spark,table):
