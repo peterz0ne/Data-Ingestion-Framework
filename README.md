@@ -1,36 +1,99 @@
-# Generic Urban Data Integration Platform
+# Configurable Data Ingestion Framework
 
-## Run
+## Overview
+
+A configurable data-ingestion framework designed to reuse the same processing logic across different datasets. JSON configurations define input sources, schemas, validation rules, and transformations. Datasets that use the supported operations can be added mainly through configuration.
+
+The project demonstrates this framework with NYC taxi trips, taxi zones, weather, and air-quality data:
+
+- **Reusable ingestion:** load and validate different datasets into Bronze and Silver Delta tables using shared pipeline components.
+- **Incremental updates and schema evolution:** process new Bronze records using Silver watermarks, validate against existing Silver data, and support explicitly configured schema changes.
+- **Data integration:** combine the example datasets into enriched taxi-trip tables in Gold.
+- **Analytics:** explore taxi demand and its relationship with weather and air quality.
+- **Machine learning:** prepare features and train a Random Forest model to predict taxi tips.
+
+> **Tech stack:** Python · Apache Spark · Delta Lake · MinIO · Docker Compose  
+> **Course:** Data-Intensive Computing (ID2221), KTH
+
+### Repository structure
+
+| Directory | Purpose |
+| --- | --- |
+| [conf/](conf/) | Spark runtime settings and Delta Lake / MinIO connectivity. |
+| [configs/](configs/) | Dataset schemas, sources, transformations, and validation rules. |
+| [data_generation/](data_generation/) | Notebooks that prepare incremental input batches and schema-change examples. |
+| [documents/](documents/) | Weekly instructions, implementation reports, and evaluation reports. |
+| [jobs/](jobs/) | Spark pipeline, analytics, and ML code. |
+| [landing/](landing/) | Local input data. Source files are excluded from Git. |
+| [minio/](minio/) | Object-storage bucket initialization script. |
+| [notebooks/](notebooks/README.md) | Queries, monitoring, benchmarks, and ML experiments. |
+
+## Architecture
+
+- Flow: `Source Data → Bronze → Silver → Gold → Analytics / ML`
+- Spark processes the data, and Delta Lake stores the tables in MinIO through an S3-compatible interface.
+- Docker Compose provides a local Spark master, two workers, MinIO, and JupyterLab.
+
+| Layer | Purpose |
+| --- | --- |
+| Bronze | Store source records with ingestion and schema-version metadata. |
+| Silver | Validate records and apply configured cleaning and transformations. |
+| Gold | Enrich taxi trips with zone information, hourly weather, and aggregated air-quality observations. |
+| Analytics / ML | Build analytical tables and prepare training data for tip prediction. |
+
+>Note: Rejected records are stored in quarantine with rejection reasons.
+
+## Getting started
 
 ### Prerequisites
-Move the initial csv/parquet files inside the following paths:
-- /landing/air_quality 
-- /landing/taxi 
-- /landing/taxi_zone_lookup 
-- /landing/weather 
 
-### Running with Docker
-To setup the environment install docker and run the following command
+- Docker with Docker Compose.
+- Sufficient CPU, memory, and disk space for the [configured services](docker-compose.yaml) and datasets.
+- Source datasets downloaded as described below.
+
+### 1. Prepare the inputs
+
+Download the prepared [assignment datasets](https://drive.google.com/drive/folders/1qjBtPVDepDE22j0axqrLVR0A2a969Qyy?usp=sharing), or consult the original sources below.
+
+| Dataset | Format | Original source |
+| --- | --- | --- |
+| Taxi trips | Parquet | [NYC TLC](https://home4.nyc.gov/site/tlc/about/tlc-trip-record-data.page) |
+| Weather | CSV | [NOAA Integrated Surface Database](https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database) |
+| Air quality | CSV | [EPA AirData](https://aqs.epa.gov/aqsweb/airdata/download_files.html) |
+| Taxi zone lookup | CSV | [NYC TLC lookup file](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv) |
+
+Extract any ZIP archives, then place the files directly in the folders below, relative to the repository root. The baseline pipeline expects this exact layout:
+
+```text
+landing/
+├── taxi/
+│   ├── yellow_tripdata_2024-01.parquet
+│   ├── yellow_tripdata_2024-02.parquet
+│   └── yellow_tripdata_2024-03.parquet
+├── taxi_zone_lookup/
+│   └── taxi_zone_lookup.csv
+├── weather/
+│   └── weather.csv
+└── air_quality/
+    └── hourly_88101_2024.csv
+```
+
+- Use the January–March 2024 **Yellow Taxi** files for taxi trips.
+- Place extracted CSV files directly in their matching folders, without an extra archive subfolder.
+- Original-source downloads may need preparation to match the schemas in the [dataset configurations](configs/).
+- Renaming a file alone does not make its contents compatible.
+
+### 2. Start the services
+
+Wait for the Spark workers and MinIO initialization to finish.
+
 ```sh
 docker compose up --build -d
 ```
-This will create the containers and start the right away.
 
-* To run the pipeline execute the following command (this will generate the gold, silver and bronze tables, as well as the dataproducts):
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077  /opt/spark/jobs/ingest.py
-```
-* To run the benchmark [notebook](./notebooks/benchmark.ipynb), see the [Jupyter setup guide](./notebooks/setup/README.md).
+### 3. Run the pipeline
 
-* To run a specific analytical query, run the the specific notbook in `notebooks/run_queries`.
-
-* To recreate the optimization results, run the notebooks in the `notebooks/optimizations` folder
-
-* To measure the sizes of each table, run the notebook: `notebooks/storage_metrics/storage_overhead.ipynb`
-
-# Incremental Updates and Schema Evolution
-
-First run the complete baseline pipeline:
+This creates the Bronze, Silver, and Gold tables and materializes the analytical products in MinIO's `delta-data` bucket.
 
 ```sh
 docker exec spark-master /opt/spark/bin/spark-submit \
@@ -38,62 +101,17 @@ docker exec spark-master /opt/spark/bin/spark-submit \
   /opt/spark/jobs/ingest.py
 ```
 
-Before running the update pipeline, download `yellow_tripdata_2025-01.parquet` from the [NYC TLC Trip Record Data page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) and place it in `landing/taxi/`.
+- Open the Spark UI at [localhost:8080](http://localhost:8080)
+- Open the MinIO console at [localhost:9001](http://localhost:9001).
+- Stop the services with `docker compose stop`.
 
-Then run the three notebooks in [data_generation](./data_generation/) to create the incremental input files:
 
-- `data_generation/taxi_trips/generate_taxi_trips.ipynb`
-- `data_generation/air_quality/air_quality.ipynb`
-- `data_generation/weather/weather.ipynb`
+## Further documentation
 
-They generate the extended Taxi Trips, Air Quality, and Weather files in their configured `landing/` paths.
-
-Now run the update pipeline with:
-
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit \
-  --master spark://spark-master:7077 \
-  /opt/spark/jobs/update.py
-```
-
-The update pipeline appends new Bronze records and processes only records ingested since the latest Silver watermark. Schema versions are configured in `configs/`; each Silver execution processes the matching Bronze `schema_version`. The supplied update configurations demonstrate schema evolution through the new `aqi` Air Quality field and `humidity` Weather field.
-
-## Monitoring and Validation Reports
-
-Pipeline execution metrics are stored in the Delta table at `metadata/pipeline_executions`. Run [inspect_pipeline_monitoring.ipynb](./notebooks/monitoring/inspect_pipeline_monitoring.ipynb) to inspect execution duration, processed and rejected records, validation failures, and dataset-level trends.
-
-Invalid records are written to the Delta quarantine table at `metadata/rejected_records`. Run [inspect_rejected_records.ipynb](./notebooks/monitoring/inspect_rejected_records.ipynb) to inspect rejected source records and their rejection reasons. Quarantined records never reach Silver, Gold, or analytical products.
-
-## Reproducing Evaluation Experiments
-
-Run the notebooks in [notebooks/update_evaluation](./notebooks/update_evaluation).
-
-# Machine-Learning Workflow
-
-After starting the containers and running the ingestion pipeline to create the integrated Gold table, run the following workflow.
-
-1. Generate the training dataset:
-
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/training_set_job.py
-```
-
-2. Run feature engineering:
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/predictions/feature_extractor_pipeline.py
-```
-
-3. Train and evaluate the tip-prediction model:
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/train_tip_model_job.py
-```
-
-This reports test MAE and RMSE and saves the fitted model.
-
-4. Reproduce the raw-versus-platform comparison:
-
-```sh
-docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 /opt/spark/jobs/compare_training_workflow_job.py
-```
-
-5. Retrain after new data are available by rerunning the training-dataset generation command followed by the model-training command. This replaces the saved model with one fitted on the refreshed data.
+- [Run incremental updates](docs/incremental-updates.md) - generate update inputs and process schema changes.
+- [Explore analytical data products](docs/analytics.md) - inspect outputs and refresh products.
+- [Train and evaluate the tip-prediction model](jobs/predictions/README.md) - prepare features, train, predict, and compare workflows.
+- [Explore queries and experiments, notebook index](notebooks/README.md) - benchmarks, optimizations, and storage measurements.
+- [Inspect monitoring and rejected records](notebooks/monitoring/README.md).
+- [Connect to Jupyter](notebooks/setup/README.md).
+- [Coursework instructions and weekly reports](documents/). Reports document the platform at each weekly submission. Some implementation details and file paths differ from the current version.
