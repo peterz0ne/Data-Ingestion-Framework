@@ -103,13 +103,13 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 
 - Open the Spark UI at [localhost:8080](http://localhost:8080)
 - Open the MinIO console at [localhost:9001](http://localhost:9001).
-- Stop the services with `docker compose down`.
+- Stop the services with `docker compose stop`.
 
 
 ## Further documentation
 
 - [Notebook guide](notebooks/README.md) — queries, monitoring, benchmarks, and ML experiments.
-- [Coursework instructions and weekly reports](documents/). Reports document the platform at each weekly submission; some implementation details and file paths differ from the current version.
+- [Coursework instructions and weekly reports](documents/). Reports document the platform at each weekly submission. Some implementation details and file paths differ from the current version.
 - [Incremental updates and ML workflow](README.md)
 - [Dataset transformations and quality rules](configs/README.md)
 - [Analytical data products](README.md#analytical-data-products) and [query notebooks](notebooks/run_queries/)
