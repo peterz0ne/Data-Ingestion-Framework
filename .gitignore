@@ -5,3 +5,4 @@ landing/air_quality/hourly_88101_2024.csv
 landing/air_quality/air_quality_2025_update.csv
 landing/taxi/yellow_tripdata_2025-01_ext.parquet
 landing/taxi/yellow_tripdata_2025-01.parquet
+.vscode/
