@@ -90,7 +90,7 @@ docker exec spark-master /opt/spark/bin/spark-submit --master spark://spark-mast
 Open and run all cells in:
 
 ```text
-notebooks/week4/task4/validate_raw_vs_platform.ipynb
+notebooks/predictions/validate_raw_vs_platform.ipynb
 ```
 
 The notebook confirms matching schemas, baseline row counts, and equivalent
