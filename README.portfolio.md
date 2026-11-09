@@ -45,27 +45,55 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 
 ## Getting started
 
-You need Docker with Docker Compose and enough resources for the services in [docker-compose.yaml](docker-compose.yaml).
+### Prerequisites
 
-**1. Prepare the inputs.** Place the source files in these directories, matching the filenames and formats in each [dataset configuration](configs/):
+- Docker with Docker Compose.
+- Sufficient CPU, memory, and disk space for the [configured services](docker-compose.yaml) and datasets.
+- Source datasets downloaded as described below.
+
+### 1. Prepare the inputs
+
+Download the prepared [assignment datasets](https://drive.google.com/drive/folders/1qjBtPVDepDE22j0axqrLVR0A2a969Qyy?usp=sharing), or consult the original sources below.
+
+| Dataset | Format | Original source |
+| --- | --- | --- |
+| Taxi trips | Parquet | [NYC TLC](https://home4.nyc.gov/site/tlc/about/tlc-trip-record-data.page) |
+| Weather | CSV | [NOAA Integrated Surface Database](https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database) |
+| Air quality | CSV | [EPA AirData](https://aqs.epa.gov/aqsweb/airdata/download_files.html) |
+| Taxi zone lookup | CSV | [NYC TLC lookup file](https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv) |
+
+Extract any ZIP archives, then place the files directly in the folders below, relative to the repository root. The baseline pipeline expects this exact layout:
 
 ```text
 landing/
 ├── taxi/
+│   ├── yellow_tripdata_2024-01.parquet
+│   ├── yellow_tripdata_2024-02.parquet
+│   └── yellow_tripdata_2024-03.parquet
 ├── taxi_zone_lookup/
+│   └── taxi_zone_lookup.csv
 ├── weather/
+│   └── weather.csv
 └── air_quality/
+    └── hourly_88101_2024.csv
 ```
 
-The baseline taxi configuration expects January–March 2024 Parquet files. Input data must currently be acquired manually.
+- Use the January–March 2024 **Yellow Taxi** files for taxi trips.
+- Place extracted CSV files directly in their matching folders, without an extra archive subfolder.
+- Original-source downloads may need preparation to match the schemas in the [dataset configurations](configs/).
+- Renaming a file alone does not make its contents compatible.
 
-**2. Start the services.** Wait for the Spark workers and MinIO initialization to finish.
+### 2. Start the services
+
+Wait for the Spark workers and MinIO initialization to finish.
 
 ```sh
 docker compose up --build -d
 ```
 
-**3. Run the pipeline.** This creates the Bronze, Silver, and Gold tables and materializes the analytical products in MinIO's `delta-data` bucket.
+### 3. Run the pipeline
+
+This creates the Bronze, Silver, and Gold tables and materializes the analytical products in MinIO's `delta-data` bucket.
 
 ```sh
 docker exec spark-master /opt/spark/bin/spark-submit \
@@ -73,9 +101,10 @@ docker exec spark-master /opt/spark/bin/spark-submit \
   /opt/spark/jobs/ingest.py
 ```
 
-Open the Spark UI at [localhost:8080](http://localhost:8080) or the MinIO console at [localhost:9001](http://localhost:9001). Stop the services with `docker compose down`.
+- Open the Spark UI at [localhost:8080](http://localhost:8080)
+- Open the MinIO console at [localhost:9001](http://localhost:9001).
+- Stop the services with `docker compose down`.
 
-This is a local development setup. Incremental processing uses watermarks; exactly-once execution and recovery from partial failures have not been established.
 
 ## Further documentation
 
