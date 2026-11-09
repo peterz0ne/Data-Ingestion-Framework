@@ -104,6 +104,8 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 
 - Open the Spark UI at [localhost:8080](http://localhost:8080)
 - Open the MinIO console at [localhost:9001](http://localhost:9001).
+  - Username: `minio`
+  - Password: `minio123456`
 - Stop the services with `docker compose stop`.
 
 
