@@ -1,6 +1,6 @@
 # Machine-learning workflow
 
-Start the services and run ingestion to create Gold, following [Getting started](../../README.portfolio.md#getting-started). Run commands from the repository root.
+Start the services and run ingestion to create Gold, following [Getting started](../../README.md#getting-started). Run commands from the repository root.
 
 ## Configuration
 

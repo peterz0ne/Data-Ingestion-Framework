@@ -1,6 +1,6 @@
 # Analytical data products
 
-Start the services and run baseline ingestion as described in [Getting started](../README.portfolio.md#getting-started).
+Start the services and run baseline ingestion as described in [Getting started](../README.md#getting-started).
 
 The full pipeline automatically refreshes four analytical Delta tables:
 

@@ -1,6 +1,6 @@
 # Incremental updates and schema evolution
 
-Start the services and prepare baseline inputs as described in [Getting started](../README.portfolio.md#getting-started). Run shell commands from the repository root.
+Start the services and prepare baseline inputs as described in [Getting started](../README.md#getting-started). Run shell commands from the repository root.
 
 First run the complete baseline pipeline:
 
