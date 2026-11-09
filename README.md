@@ -4,6 +4,9 @@
 
 A configurable data-ingestion framework designed to reuse the same processing logic across different datasets. JSON configurations define input sources, schemas, validation rules, and transformations. Datasets that use the supported operations can be added mainly through configuration.
 
+> **Tech stack:** Python · Apache Spark · Delta Lake · MinIO · Docker Compose  
+> **Course:** Data-Intensive Computing (ID2221), KTH
+
 The project demonstrates this framework with NYC taxi trips, taxi zones, weather, and air-quality data:
 
 - **Reusable ingestion:** load and validate different datasets into Bronze and Silver Delta tables using shared pipeline components.
@@ -11,9 +14,6 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 - **Data integration:** combine the example datasets into enriched taxi-trip tables in Gold.
 - **Analytics:** explore taxi demand and its relationship with weather and air quality.
 - **Machine learning:** prepare features and train a Random Forest model to predict taxi tips.
-
-> **Tech stack:** Python · Apache Spark · Delta Lake · MinIO · Docker Compose  
-> **Course:** Data-Intensive Computing (ID2221), KTH
 
 ### Repository structure
 
