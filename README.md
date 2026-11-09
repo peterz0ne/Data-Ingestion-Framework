@@ -21,8 +21,9 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 | --- | --- |
 | [conf/](conf/) | Spark runtime settings and Delta Lake / MinIO connectivity. |
 | [configs/](configs/) | Dataset schemas, sources, transformations, and validation rules. |
+| [coursework/](coursework/) | Weekly instructions, implementation reports, and evaluation reports. |
 | [data_generation/](data_generation/) | Notebooks that prepare incremental input batches and schema-change examples. |
-| [documents/](documents/) | Weekly instructions, implementation reports, and evaluation reports. |
+| [docs/](docs/) | Current guides for incremental updates and analytical data products. |
 | [jobs/](jobs/) | Spark pipeline, analytics, and ML code. |
 | [landing/](landing/) | Local input data. Source files are excluded from Git. |
 | [minio/](minio/) | Object-storage bucket initialization script. |
@@ -114,4 +115,4 @@ docker exec spark-master /opt/spark/bin/spark-submit \
 - [Explore queries and experiments, notebook index](notebooks/README.md) - benchmarks, optimizations, and storage measurements.
 - [Inspect monitoring and rejected records](notebooks/monitoring/README.md).
 - [Connect to Jupyter](notebooks/setup/README.md).
-- [Coursework instructions and weekly reports](documents/). Reports document the platform at each weekly submission. Some implementation details and file paths differ from the current version.
+- [Coursework instructions and weekly reports](coursework/). Reports document the platform at each weekly submission. Some implementation details and file paths differ from the current version.
