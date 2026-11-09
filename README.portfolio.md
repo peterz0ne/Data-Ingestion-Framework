@@ -7,6 +7,7 @@ A configurable data-ingestion framework designed to reuse the same processing lo
 The project demonstrates this framework with NYC taxi trips, taxi zones, weather, and air-quality data:
 
 - **Reusable ingestion:** load and validate different datasets into Bronze and Silver Delta tables using shared pipeline components.
+- **Incremental updates and schema evolution:** process new Bronze records using Silver watermarks, validate against existing Silver data, and support explicitly configured schema changes.
 - **Data integration:** combine the example datasets into enriched taxi-trip tables in Gold.
 - **Analytics:** explore taxi demand and its relationship with weather and air quality.
 - **Machine learning:** prepare features and train a Random Forest model to predict taxi tips.
@@ -36,18 +37,11 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 | Layer | Purpose |
 | --- | --- |
 | Bronze | Store source records with ingestion and schema-version metadata. |
-| Silver | Validate, clean, and standardize each dataset. |
-| Gold | Enrich taxi trips with zone information and hourly weather and air-quality observations. |
-| Analytics / ML | Produce demand-analysis tables and training data for tip prediction. |
+| Silver | Validate records and apply configured cleaning and transformations. |
+| Gold | Enrich taxi trips with zone information, hourly weather, and aggregated air-quality observations. |
+| Analytics / ML | Build analytical tables and prepare training data for tip prediction. |
 
-Rejected records are stored in quarantine with rejection reasons. Execution metadata records processing metrics and dependencies between pipeline stages.
-
-## Key features
-
-- **Configuration-driven processing:** JSON files define sources, schemas, quality checks, operations, and partitions.
-- **Validation and quarantine:** configurable checks separate valid and rejected records. Rejected records are stored with rejection reasons for inspection.
-- **Incremental updates and schema evolution:** watermark-based Silver processing, checks against existing Silver data, and versioned dataset configurations.
-- **Analytics and ML:** materialized demand and environmental analysis tables, plus feature engineering, model training, and evaluation for taxi-tip prediction.
+>Note: Rejected records are stored in quarantine with rejection reasons.
 
 ## Getting started
 
