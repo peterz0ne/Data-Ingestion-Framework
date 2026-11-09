@@ -1,7 +1,7 @@
 # How to connect your notebook to the jupyter server
 
 1. Open your notebook and click `Select Kernel` in the upper right corner ![alt text](image.png)
-1. Select `Existung Jupyter Server`
+1. Select `Existing Jupyter Server`
 1. Type in `http://127.0.0.1:8888`
 1. Accept the connection over http
 ![alt text](<Screenshot 2026-09-13 094835.png>)
