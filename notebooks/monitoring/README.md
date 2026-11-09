@@ -9,4 +9,10 @@ Run the ingestion pipeline before using these notebooks. See the [Jupyter setup 
 | [Rejected records](inspect_rejected_records.ipynb) | Inspect quarantined records and rejection reasons. |
 | [Data products](inspect_data_products.ipynb) | Inspect analytical tables and refresh history. |
 
-Execution metrics are stored in `s3a://delta-data/metadata/pipeline_executions`; quarantined records are stored in `s3a://delta-data/metadata/rejected_records`.
+Execution metrics are stored in:
+
+`s3a://delta-data/metadata/pipeline_executions`
+
+Quarantined records are stored in:
+
+`s3a://delta-data/metadata/rejected_records`.
