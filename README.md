@@ -2,7 +2,7 @@
 
 ## Overview
 
-A configurable data-ingestion framework designed to reuse the same processing logic across different datasets. JSON configurations define input sources, schemas, validation rules, and transformations. Datasets that use the supported operations can be added mainly through configuration.
+A configurable **data lakehouse** ingestion framework designed to reuse the same processing logic across different datasets using a **medallion architecture** (Bronze, Silver, Gold). JSON configurations define input sources, schemas, validation rules, and transformations. Datasets that use the supported operations can be added mainly through configuration.
 
 > **Tech stack:** Python · Apache Spark · Delta Lake · MinIO · Docker Compose  
 > **Course:** Data-Intensive Computing (ID2221), KTH
@@ -12,8 +12,8 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 - **Reusable ingestion:** load and validate different datasets into Bronze and Silver Delta tables using shared pipeline components.
 - **Incremental updates and schema evolution:** process new Bronze records using Silver watermarks, validate against existing Silver data, and support explicitly configured schema changes.
 - **Data integration:** combine the example datasets into enriched taxi-trip tables in Gold.
-- **Analytics:** explore taxi demand and its relationship with weather and air quality.
-- **Machine learning:** prepare features and train a Random Forest model to predict taxi tips.
+- **Analytics:** explore taxi demand and its relationship with weather and air quality through materialized analytical products.
+- **Machine learning:** prepare training datasets from Gold, train a Random Forest model to predict taxi tips, and save the fitted preprocessing and model pipeline.
 
 ### Repository structure
 
@@ -35,14 +35,14 @@ The project demonstrates this framework with NYC taxi trips, taxi zones, weather
 - Spark processes the data, and Delta Lake stores the tables in MinIO through an S3-compatible interface.
 - Docker Compose provides a local Spark master, two workers, MinIO, and JupyterLab.
 
-| Layer | Purpose |
+| Layer / output | Purpose |
 | --- | --- |
-| Bronze | Store source records with ingestion and schema-version metadata. |
-| Silver | Validate records and apply configured cleaning and transformations. |
-| Gold | Enrich taxi trips with zone information, hourly weather, and aggregated air-quality observations. |
-| Analytics / ML | Build analytical tables and prepare training data for tip prediction. |
+| Bronze | Store raw ingested records with ingestion timestamp and schema-version metadata. |
+| Silver | Validate schemas and data quality, quarantine rejected records, and transform valid records. |
+| Gold | Store taxi trips enriched with zone information, hourly weather, and aggregated air-quality observations under `gold/`. |
+| Analytics / ML | Store analytical products under `analytics/` and ML datasets and models under `predictions/`. |
 
->Note: Rejected records are stored in quarantine with rejection reasons.
+> Note: Rejected records failing Silver validation are routed to a quarantine Delta table with failure reasons.
 
 ## Getting started
 
